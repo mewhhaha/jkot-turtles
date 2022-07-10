@@ -42,8 +42,7 @@
   },
   "sideEffects": false,
   "scripts": {
-    "build": "NODE_ENV=production run-s build:css build:durable build:remix",
-    "build:durable": "pnpm --filter durable-objects build",
+    "build": "NODE_ENV=production run-s build:css build:remix",
     "build:css": "tailwindcss -o ./app/tailwind.css --minify",
     "build:remix": "NODE_ENV=production remix build",
     "dev:remix": "NODE_ENV=development remix watch",
