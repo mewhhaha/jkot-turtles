@@ -8,7 +8,7 @@ module.exports = {
   ignoredRouteFiles: ["**/.*"],
   // appDirectory: "src",
   // assetsBuildDirectory: "../public/build",
-  serverBuildPath: "../functions/[[path]].js",
+  // serverBuildPath: "../functions/[[path]].js",
   // publicPath: "/build/",
   // devServerPort: 8002
 };
