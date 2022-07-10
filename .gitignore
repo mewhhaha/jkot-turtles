@@ -1,0 +1,17 @@
+node_modules
+
+/web/.cache
+/functions/[[path]].js
+/web/public/build
+
+tailwind.css
+
+dist
+
+.env
+
+functions
+
+.vscode
+
+.pnpm-debug.log

@@ -1,0 +1,18 @@
+{
+  "private": true,
+  "name": "jkot",
+  "description": "",
+  "license": "",
+  "dependencies": {},
+  "devDependencies": {},
+  "engines": {
+    "node": ">=16"
+  },
+  "sideEffects": false,
+  "scripts": {
+    "postinstall": "remix setup cloudflare",
+    "build": "pnpm --filter web build",
+    "dev": "pnpm --filter web dev",
+    "test": "pnpm --filter web test"
+  }
+}
