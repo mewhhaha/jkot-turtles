@@ -1,10 +1,10 @@
 import { createSessions, DurableObjectTemplate, shuffle } from "./helpers";
 
-type Turtle = "green" | "purple" | "blue" | "red" | "yellow";
+export type Turtle = "green" | "purple" | "blue" | "red" | "yellow";
 
-type Game = "waiting" | "started" | "done";
+export type Game = "waiting" | "started" | "done";
 
-type Card =
+export type Card =
   | `${Turtle}++`
   | `${Turtle}+`
   | `${Turtle}-`
@@ -13,10 +13,21 @@ type Card =
   | "any↑"
   | "any↑↑";
 
-type Tile = Turtle[];
-type Board = [Set<Turtle>, ...Tile[]];
+export type Tile = Turtle[];
+export type Board = [Set<Turtle>, ...Tile[]];
 
-type Message = ["start"] | ["play", number, Turtle?];
+export type ClientMessage = ["start"] | ["play", number, Turtle?];
+export type ServerMessage =
+  | ["error", string]
+  | ["game", "done"]
+  | [
+      "game",
+      "started",
+      { board: Board; player: [string, { turtle: Turtle; cards: Card[] }] }
+    ]
+  | ["game", "waiting", string[]]
+  | ["reconnected", string]
+  | ["joined", string];
 
 const all = ["green", "purple", "blue", "red", "yellow"] as const;
 
@@ -105,10 +116,22 @@ export class TurtleGame extends DurableObjectTemplate {
     }
   }
 
-  handleWaiting(name: string, [t]: Message) {
+  nextTurn() {
+    this.current = (this.current + 1) % this.players.length;
+  }
+
+  handleWaiting(websocket: WebSocket, name: string, [t]: ClientMessage) {
     switch (t) {
       case "start": {
-        if (name !== this.admin) return;
+        if (name !== this.admin) {
+          websocket.send(JSON.stringify(["error", "not admin"]));
+          return;
+        }
+
+        if (this.waiting.size < 2) {
+          websocket.send(JSON.stringify(["error", "not enough players"]));
+          return;
+        }
 
         this.game = "started";
         const turtles = shuffle(all);
@@ -122,10 +145,17 @@ export class TurtleGame extends DurableObjectTemplate {
         this.players = shuffle(this.players);
         return;
       }
+      default: {
+        websocket.send(JSON.stringify(["error", "invalid command"]));
+      }
     }
   }
 
-  handleStarted(name: string, [t, cardIndex, wildcard]: Message) {
+  handleStarted(
+    _websocket: WebSocket,
+    name: string,
+    [t, cardIndex, wildcard]: ClientMessage
+  ) {
     switch (t) {
       case "play": {
         const player = this.players[this.current];
@@ -134,11 +164,11 @@ export class TurtleGame extends DurableObjectTemplate {
         const card = player[1].cards[cardIndex];
         if (!card) return;
 
-        const pick = this.deck.splice(1);
-        player[1].cards = removeCard(player[1].cards, cardIndex).concat(pick);
+        player[1].cards = removeCard(player[1].cards, cardIndex);
+        player[1].cards = player[1].cards.concat(this.deck.splice(1)); // Pickup card from deck
 
         this.playCard(card, wildcard);
-        this.current = (this.current + 1) % this.players.length;
+        this.nextTurn();
       }
     }
   }
@@ -146,32 +176,64 @@ export class TurtleGame extends DurableObjectTemplate {
   async connect(name: string) {
     return await this.sessions.connect({
       onConnect: (websocket) => {
-        if (this.waiting.size === 4) {
-          websocket.send(JSON.stringify(["full"]));
-          websocket.close();
-          return;
-        }
+        switch (this.game) {
+          case "done": {
+            websocket.send(JSON.stringify(["game", "done"]));
+            websocket.close();
+            break;
+          }
 
-        if (this.waiting.size === 0) {
-          this.admin = name;
-        }
+          case "started": {
+            const player = this.players.find((p) => p[0] === name);
+            if (!player) {
+              websocket.send(JSON.stringify(["error", "invalid user"]));
+              websocket.close();
+              return;
+            }
 
-        this.waiting.add(name);
-        this.sessions.broadcast(JSON.stringify(["joined", name]));
+            websocket.send(
+              JSON.stringify(["game", "started", { board: this.board, player }])
+            );
+            break;
+          }
+
+          case "waiting": {
+            websocket.send(
+              JSON.stringify(["game", "waiting", [...this.waiting]])
+            );
+            if (this.waiting.has(name)) {
+              this.sessions.broadcast(JSON.stringify(["reconnected", name]));
+              return;
+            }
+            if (this.waiting.size === 4) {
+              websocket.send(JSON.stringify(["error", "full"]));
+              websocket.close();
+              return;
+            }
+
+            if (this.waiting.size === 0) {
+              this.admin = name;
+            }
+
+            this.waiting.add(name);
+            this.sessions.broadcast(JSON.stringify(["joined", name]));
+          }
+        }
       },
       onMessage: (websocket, message: MessageEvent) => {
         if (this.game === "done") {
+          websocket.send(JSON.stringify(["error", "done"]));
           websocket.close();
         }
 
-        const msg = JSON.parse(message.data as string) as Message;
+        const msg = JSON.parse(message.data as string) as ClientMessage;
 
         if (this.game === "waiting") {
-          this.handleWaiting(name, msg);
+          this.handleWaiting(websocket, name, msg);
         }
 
         if (this.game === "started") {
-          this.handleStarted(name, msg);
+          this.handleStarted(websocket, name, msg);
         }
       },
     });

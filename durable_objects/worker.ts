@@ -2,13 +2,13 @@ import { Router, Request as RouterRequest } from "itty-router";
 import { init } from "./helpers";
 import { TurtleGame } from "./turtle-game";
 import { Env } from "./types";
-export { TurtleGame } from "./turtle-game";
+export * from "./turtle-game";
 
 const router = Router();
 
 router.get("/:id/:name", async (request: Request & RouterRequest, env: Env) => {
   const id = request.params?.id;
-  const name = request.params?.id;
+  const name = request.params?.name;
 
   if (!id) return new Response("expected id", { status: 422 });
   if (!name) return new Response("expected name", { status: 422 });
