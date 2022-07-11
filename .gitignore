@@ -1,7 +1,8 @@
 node_modules
 
 /web/.cache
-/functions/[[path]].js
+/web/.dev.vars
+/web/functions
 /web/public/build
 
 tailwind.css

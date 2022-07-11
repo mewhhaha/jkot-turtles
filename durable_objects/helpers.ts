@@ -7,7 +7,7 @@ export type External<A extends Record<any, any>> = Extract<
   string
 >;
 
-export const createInit = <ClassDO extends Record<any, any>>(
+export const init = <ClassDO extends Record<any, any>>(
   ns: DurableObjectNamespace
 ) => {
   return {
@@ -17,16 +17,18 @@ export const createInit = <ClassDO extends Record<any, any>>(
 
       return {
         call: <Method extends External<ClassDO>>(
+          request: Request,
           method: Method,
           ...args: Parameters<ClassDO[Method]>
         ) => {
-          return stub.fetch(`https://do/${method}`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify(args),
-          });
+          const encodedArgs = encodeURIComponent(JSON.stringify(args));
+          return stub.fetch(
+            new Request(`https://do/${method}/${encodedArgs}`, {
+              method: request.method,
+              headers: request.headers,
+              cf: request.cf,
+            })
+          );
         },
       };
     },
@@ -61,9 +63,8 @@ export const createSessions = () => {
 
       return new Response(null, { status: 101, webSocket: pair[0] });
     },
-    broadcast: (origin: WebSocket, message: string) => {
+    broadcast: (message: string) => {
       sessions = sessions.filter((session) => {
-        if (session === origin) return true;
         try {
           session.send(message);
           return true;
@@ -78,10 +79,19 @@ export const createSessions = () => {
 export class DurableObjectTemplate implements DurableObject {
   async fetch(request: Request): Promise<Response> {
     const url = new URL(request.url);
-    const path = url.pathname.slice(1);
-    const args = await request.json();
+    const [method, encodedArgs] = url.pathname.split("/").slice(1);
+    const args = JSON.parse(decodeURIComponent(encodedArgs));
 
     // @ts-ignore Here we go!
-    return await this[path](...args);
+    return await this[method](...args);
   }
 }
+
+export const shuffle = <A extends unknown>(array: A[] | readonly A[]): A[] => {
+  const copy = [...array];
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+};

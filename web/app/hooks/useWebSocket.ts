@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 export type WebSocketStatus =
   | "idle"
@@ -7,25 +7,31 @@ export type WebSocketStatus =
   | "open"
   | "reconnecting";
 
-export type UseWebSocketOptions = { reconnect: boolean };
+export type UseWebSocketOptions = { reconnect: boolean; retries: number };
 
 export const useWebSocket = (
   socketURL: string,
-  { reconnect }: UseWebSocketOptions = { reconnect: true }
+  { reconnect, retries }: UseWebSocketOptions = { reconnect: true, retries: 10 }
 ) => {
   const [status, setStatus] = useState<WebSocketStatus>("idle");
-  const [socket, setSocket] = useState<WebSocket>(
-    () => new WebSocket(socketURL)
-  );
+  const [socket, setSocket] = useState<WebSocket>();
+
+  const reconnects = useRef(0);
 
   useEffect(() => {
+    if (socket === undefined) {
+      setSocket(new WebSocket(socketURL));
+      return;
+    }
+
     try {
       const handleError = () => {
         setStatus("error");
       };
 
       const handleClose = () => {
-        if (reconnect) {
+        if (reconnect && reconnects.current <= retries) {
+          reconnects.current += 1;
           setStatus("reconnecting");
           setSocket(new WebSocket(socketURL));
         } else {
@@ -35,6 +41,7 @@ export const useWebSocket = (
 
       const handleOpen = () => {
         setStatus("open");
+        reconnects.current = 0;
       };
 
       socket.addEventListener("error", handleError);
@@ -51,7 +58,7 @@ export const useWebSocket = (
       console.error(error);
       setStatus("error");
     }
-  }, [reconnect, setSocket, socket, socketURL]);
+  }, [reconnect, retries, setSocket, socket, socketURL]);
 
   return [socket, status] as const;
 };

@@ -4,7 +4,7 @@ name = "jkot-turtles"
 
 [durable_objects]
 bindings = [
-  {name = "TUTLE_GAME_DO", class_name = "TurtleGame"},
+  {name = "TURTLE_GAME_DO", class_name = "TurtleGame"},
 ]
 
 [[migrations]]

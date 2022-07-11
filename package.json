@@ -10,7 +10,6 @@
   },
   "sideEffects": false,
   "scripts": {
-    "postinstall": "remix setup cloudflare",
     "build": "pnpm --filter web build",
     "dev": "pnpm --filter web dev",
     "test": "pnpm --filter web test"

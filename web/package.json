@@ -41,12 +41,13 @@
   },
   "sideEffects": false,
   "scripts": {
+    "postinstall": "remix setup cloudflare",
     "build": "NODE_ENV=production run-s build:css build:remix",
-    "build:css": "tailwindcss -o ./app/tailwind.css --minify",
+    "build:css": "tailwindcss -m -o ./app/tailwind.css",
     "build:remix": "NODE_ENV=production remix build",
     "dev:remix": "NODE_ENV=development remix watch",
-    "dev:tailwind": "tailwindcss -o ./app/tailwind.css --watch",
-    "dev:wrangler": "NODE_ENV=development wrangler pages dev ./public",
+    "dev:tailwind": "tailwindcss -w -o ./app/tailwind.css",
+    "dev:wrangler": "NODE_ENV=development wrangler pages dev --live-reload ./public",
     "dev": "tailwindcss -o ./app/tailwind.css && NODE_ENV=development remix build && run-p \"dev:*\"",
     "test": "vitest"
   }

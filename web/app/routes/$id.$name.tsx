@@ -14,15 +14,16 @@ export const loader: LoaderFunction = ({
   invariant(id, "Should exist");
   invariant(name, "Should exist");
 
-  return { url: `${context.WORKER_URL}/${id}`, name };
+  return { url: `wss://${context.WORKER_URL}/${id}/${name}`, name };
 };
 
-export const Id = () => {
-  const { url } = useLoaderData<LoaderData>();
+export default function Id() {
+  const { url, name } = useLoaderData<LoaderData>();
   const [messages, setMessages] = useState<string[]>([]);
   const [socket, status] = useWebSocket(url);
 
   useEffect(() => {
+    if (socket === undefined) return;
     socket.onmessage = (event) => {
       setMessages((p) => [...p, event.data]);
     };
@@ -30,7 +31,8 @@ export const Id = () => {
   return (
     <section className="flex flex-col">
       <h1>{status}</h1>
+      <p>{name}</p>
       <div>{messages.join("\n")}</div>
     </section>
   );
-};
+}
