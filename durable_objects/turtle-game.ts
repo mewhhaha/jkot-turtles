@@ -1,8 +1,9 @@
-import { createSessions, DurableObjectTemplate, shuffle } from "./helpers";
+import { shuffle } from "prelude";
+import { createSessions, DurableObjectTemplate } from "./helpers";
 
 export type Turtle = "green" | "purple" | "blue" | "red" | "yellow";
 
-export type Game = "waiting" | "started" | "done";
+export type Game = "waiting" | "started" | "starting" | "done";
 
 export type Card =
   | `${Turtle}++`
@@ -15,16 +16,14 @@ export type Card =
 
 export type Tile = Turtle[];
 export type Board = [Set<Turtle>, ...Tile[]];
+export type Player = [string, { turtle: Turtle; cards: Card[] }];
 
-export type ClientMessage = ["start"] | ["play", number, Turtle?];
+export type ClientMessage = ["start"] | ["latest"] | ["play", number, Turtle?];
 export type ServerMessage =
   | ["error", string]
   | ["game", "done"]
-  | [
-      "game",
-      "started",
-      { board: Board; player: [string, { turtle: Turtle; cards: Card[] }] }
-    ]
+  | ["game", "starting"]
+  | ["game", "started", { board: Board; player: Player }]
   | ["game", "waiting", string[]]
   | ["reconnected", string]
   | ["joined", string];
@@ -54,6 +53,9 @@ const removeCard = (cards: Card[], index: number) => {
   return cards.slice(0, index).concat(cards.slice(index + 1));
 };
 
+const serverMessage = <M extends ServerMessage>(message: M) =>
+  JSON.stringify(message);
+
 export class TurtleGame extends DurableObjectTemplate {
   sessions: ReturnType<typeof createSessions>;
   game: Game;
@@ -62,7 +64,7 @@ export class TurtleGame extends DurableObjectTemplate {
   discard: Card[];
   waiting: Set<string>;
   current: number;
-  players: [string, { turtle: Turtle; cards: Card[] }][];
+  players: Player[];
   board: Board;
 
   constructor(_state: DurableObjectState) {
@@ -78,58 +80,16 @@ export class TurtleGame extends DurableObjectTemplate {
     this.board = [new Set(all), ...new Array(10).fill([])];
   }
 
-  playCard(card: Card, wildcard?: Turtle) {
-    switch (card) {
-      case "any+": {
-        if (wildcard !== undefined) {
-          this.board = move(this.board, wildcard, 1);
-        }
-        break;
-      }
-      case "any-":
-        if (wildcard !== undefined) {
-          this.board = move(this.board, wildcard, -1);
-        }
-        break;
-      case "any↑":
-        if (wildcard !== undefined && turtleLast(this.board, wildcard)) {
-          this.board = move(this.board, wildcard, 1);
-        }
-        break;
-      case "any↑↑":
-        if (wildcard !== undefined && turtleLast(this.board, wildcard)) {
-          this.board = move(this.board, wildcard, 2);
-        }
-        break;
-      default: {
-        if (endsWith(card, "++")) {
-          const color = removeEnd(card, "++");
-          this.board = move(this.board, color, 2);
-        } else if (endsWith(card, "+")) {
-          const color = removeEnd(card, "+");
-          this.board = move(this.board, color, 1);
-        } else if (endsWith(card, "-")) {
-          const color = removeEnd(card, "-");
-          this.board = move(this.board, color, -1);
-        }
-      }
-    }
-  }
-
-  nextTurn() {
-    this.current = (this.current + 1) % this.players.length;
-  }
-
   handleWaiting(websocket: WebSocket, name: string, [t]: ClientMessage) {
     switch (t) {
       case "start": {
         if (name !== this.admin) {
-          websocket.send(JSON.stringify(["error", "not admin"]));
+          websocket.send(serverMessage(["error", "not admin"]));
           return;
         }
 
         if (this.waiting.size < 2) {
-          websocket.send(JSON.stringify(["error", "not enough players"]));
+          websocket.send(serverMessage(["error", "not enough players"]));
           return;
         }
 
@@ -143,32 +103,46 @@ export class TurtleGame extends DurableObjectTemplate {
           }
         });
         this.players = shuffle(this.players);
+        this.sessions.broadcast(serverMessage(["game", "starting"]));
         return;
       }
       default: {
-        websocket.send(JSON.stringify(["error", "invalid command"]));
+        websocket.send(serverMessage(["error", "invalid command"]));
       }
     }
   }
 
   handleStarted(
-    _websocket: WebSocket,
+    websocket: WebSocket,
     name: string,
     [t, cardIndex, wildcard]: ClientMessage
   ) {
     switch (t) {
-      case "play": {
-        const player = this.players[this.current];
-        if (name !== player[0]) return;
+      case "latest": {
+        const player = this.players.find((p) => p[0] === name);
+        if (!player) {
+          websocket.send(serverMessage(["error", "invalid user"]));
+          websocket.close();
+          return;
+        }
 
-        const card = player[1].cards[cardIndex];
+        websocket.send(
+          serverMessage(["game", "started", { board: this.board, player }])
+        );
+        break;
+      }
+      case "play": {
+        const [playerName, player] = this.players[this.current];
+        if (name !== playerName) return;
+
+        const card = player.cards[cardIndex];
         if (!card) return;
 
-        player[1].cards = removeCard(player[1].cards, cardIndex);
-        player[1].cards = player[1].cards.concat(this.deck.splice(1)); // Pickup card from deck
+        player.cards = removeCard(player.cards, cardIndex);
+        player.cards = player.cards.concat(this.deck.splice(1)); // Pickup card from deck
 
-        this.playCard(card, wildcard);
-        this.nextTurn();
+        this.board = playCard(this.board, card, wildcard);
+        this.current = nextTurn(this.current, this.players);
       }
     }
   }
@@ -178,7 +152,7 @@ export class TurtleGame extends DurableObjectTemplate {
       onConnect: (websocket) => {
         switch (this.game) {
           case "done": {
-            websocket.send(JSON.stringify(["game", "done"]));
+            websocket.send(serverMessage(["game", "done"]));
             websocket.close();
             break;
           }
@@ -186,27 +160,27 @@ export class TurtleGame extends DurableObjectTemplate {
           case "started": {
             const player = this.players.find((p) => p[0] === name);
             if (!player) {
-              websocket.send(JSON.stringify(["error", "invalid user"]));
+              websocket.send(serverMessage(["error", "invalid user"]));
               websocket.close();
               return;
             }
 
             websocket.send(
-              JSON.stringify(["game", "started", { board: this.board, player }])
+              serverMessage(["game", "started", { board: this.board, player }])
             );
             break;
           }
 
           case "waiting": {
             websocket.send(
-              JSON.stringify(["game", "waiting", [...this.waiting]])
+              serverMessage(["game", "waiting", [...this.waiting]])
             );
             if (this.waiting.has(name)) {
-              this.sessions.broadcast(JSON.stringify(["reconnected", name]));
+              this.sessions.broadcast(serverMessage(["reconnected", name]));
               return;
             }
             if (this.waiting.size === 4) {
-              websocket.send(JSON.stringify(["error", "full"]));
+              websocket.send(serverMessage(["error", "full"]));
               websocket.close();
               return;
             }
@@ -216,13 +190,13 @@ export class TurtleGame extends DurableObjectTemplate {
             }
 
             this.waiting.add(name);
-            this.sessions.broadcast(JSON.stringify(["joined", name]));
+            this.sessions.broadcast(serverMessage(["joined", name]));
           }
         }
       },
       onMessage: (websocket, message: MessageEvent) => {
         if (this.game === "done") {
-          websocket.send(JSON.stringify(["error", "done"]));
+          websocket.send(serverMessage(["error", "done"]));
           websocket.close();
         }
 
@@ -331,4 +305,52 @@ const turtleLast = ([first, ...rest]: Board, turtle: Turtle) => {
   }
 
   return false;
+};
+
+const playCard = (board: Board, card: Card, wildcard?: Turtle): Board => {
+  switch (card) {
+    case "any+": {
+      if (wildcard !== undefined) {
+        return move(board, wildcard, 1);
+      }
+      break;
+    }
+    case "any-":
+      if (wildcard !== undefined) {
+        return move(board, wildcard, -1);
+      }
+      break;
+    case "any↑":
+      if (wildcard !== undefined && turtleLast(board, wildcard)) {
+        return move(board, wildcard, 1);
+      }
+      break;
+    case "any↑↑":
+      if (wildcard !== undefined && turtleLast(board, wildcard)) {
+        return move(board, wildcard, 2);
+      }
+      break;
+    default: {
+      if (endsWith(card, "++")) {
+        const color = removeEnd(card, "++");
+        return move(board, color, 2);
+      }
+
+      if (endsWith(card, "+")) {
+        const color = removeEnd(card, "+");
+        return move(board, color, 1);
+      }
+
+      if (endsWith(card, "-")) {
+        const color = removeEnd(card, "-");
+        return move(board, color, -1);
+      }
+    }
+  }
+
+  return board;
+};
+
+const nextTurn = (turn: number, players: Player[]) => {
+  return (turn + 1) % players.length;
 };

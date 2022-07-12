@@ -8,7 +8,10 @@ module.exports = {
   ignoredRouteFiles: ["**/.*"],
   // appDirectory: "src",
   // assetsBuildDirectory: "../public/build",
-  serverBuildPath: "../functions/[[path]].js",
+  serverBuildPath:
+    process.env.NODE_ENV === "production"
+      ? "../functions/[[path]].js"
+      : undefined,
   // publicPath: "/build/",
   // devServerPort: 8002
 };

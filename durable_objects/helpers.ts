@@ -63,6 +63,7 @@ export const createSessions = () => {
 
       return new Response(null, { status: 101, webSocket: pair[0] });
     },
+
     broadcast: (message: string) => {
       sessions = sessions.filter((session) => {
         try {
@@ -86,12 +87,3 @@ export class DurableObjectTemplate implements DurableObject {
     return await this[method](...args);
   }
 }
-
-export const shuffle = <A extends unknown>(array: A[] | readonly A[]): A[] => {
-  const copy = [...array];
-  for (let i = copy.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [copy[i], copy[j]] = [copy[j], copy[i]];
-  }
-  return copy;
-};

@@ -18,7 +18,7 @@ export default function Index() {
         </h1>
       </header>
       <main className="flex flex-grow justify-center pt-32">
-        <Form className="flex flex-col space-y-4" method="post">
+        <Form className="flex flex-col space-y-4 px-10" method="post">
           <input
             name="id"
             placeholder="Type room name"
