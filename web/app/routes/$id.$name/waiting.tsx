@@ -4,36 +4,39 @@ import type { LoaderFunction } from "remix";
 import { useLoaderData } from "@remix-run/react";
 import { useWaitingContext } from "../$id.$name";
 import clsx from "clsx";
-import type { ClientMessage } from "durable-objects";
+import { clientMessage } from "app/helpers/socket";
 
-type LoaderData = { self: string };
+type LoaderData = { room: string; self: string };
 
 export const loader: LoaderFunction = ({
-  params: { name },
+  params: { id, name },
 }: CloudflareDataFunctionArgs): LoaderData => {
+  invariant(id, "Should exist");
   invariant(name, "Should exist");
-  return { self: name };
+  return { room: id, self: decodeURIComponent(name) };
 };
 
 export default function Waiting() {
-  const { self } = useLoaderData<LoaderData>();
+  const { self, room } = useLoaderData<LoaderData>();
   const [{ waiting }, socket] = useWaitingContext();
 
   const handleOnStart = () => {
-    const message: ClientMessage = ["start"];
-    socket?.send(JSON.stringify(message));
+    socket?.send(clientMessage(["start"]));
   };
 
   return (
     <section className="flex w-full flex-col space-y-4">
-      <h1 className="mb-2 text-4xl">Lobby</h1>
+      <h1 className="bg-gradient-to-tl from-orange-300 to-purple-700 bg-clip-text text-6xl font-extrabold tracking-wide text-transparent">
+        {room}
+      </h1>
+      <hr />
       <ul className="flex flex-col space-y-2">
         {waiting.map((name) => {
           return (
             <li
               className={clsx(
-                "rounded-md border p-4 font-serif text-3xl font-extrabold tracking-wide",
-                self === name ? "bg-blue-50" : "bg-red-50"
+                "bg-gradient-to-r p-4 font-serif text-3xl font-extrabold tracking-wide",
+                self === name ? "from-blue-50" : "from-red-50"
               )}
               key={name}
             >

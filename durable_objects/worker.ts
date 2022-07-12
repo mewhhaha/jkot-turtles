@@ -19,7 +19,7 @@ router.get("/:id/:name", async (request: Request & RouterRequest, env: Env) => {
 
   const durableObject = init<TurtleGame>(env.TURTLE_GAME_DO).get(id);
 
-  return await durableObject.call(request, "connect", name);
+  return await durableObject.call(request, "connect", decodeURIComponent(name));
 });
 
 export default {

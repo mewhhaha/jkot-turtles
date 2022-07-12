@@ -10,6 +10,7 @@ import {
 } from "@remix-run/react";
 import type { Board, Card, ServerMessage, Turtle } from "durable-objects";
 import invariant from "invariant";
+import { clientMessage } from "app/helpers/socket";
 
 type LoaderData = { url: string; name: string };
 
@@ -23,20 +24,23 @@ export const loader: LoaderFunction = ({
   return { url: `wss://${context.WORKER_URL}/${id}/${name}`, name };
 };
 
-type WaitingState = { type: "waiting"; waiting: string[] };
-type StartedState = {
-  type: "started";
-  board: Board;
-  cards: Card[];
-  turtle: Turtle;
-};
+type From<Previous, Current> = Partial<Omit<Previous, "type">> & Current;
 
-type State =
-  | {
-      type: "none";
-    }
-  | WaitingState
-  | StartedState;
+type EmptyState = { type: "none" };
+type WaitingState = From<EmptyState, { type: "waiting"; waiting: string[] }>;
+type StartedState = From<
+  WaitingState,
+  {
+    type: "started";
+    board: Board;
+    cards: Card[];
+    turtle: Turtle;
+  }
+>;
+
+type DoneState = From<StartedState, { type: "done" }>;
+
+type State = EmptyState | WaitingState | StartedState | DoneState;
 
 type Action =
   | { type: "init_waiting"; waiting: string[] }
@@ -62,6 +66,7 @@ const reducer = (state: State, action: Action): State => {
         board: action.board,
         cards: action.cards,
         turtle: action.turtle,
+        waiting: "waiting" in state ? state.waiting : undefined,
       };
     }
   }
@@ -107,8 +112,9 @@ export default function Id() {
               turtle: a1.player[1].turtle,
             });
 
-          navigate(a0, { replace: true });
+          if (a0 === "starting") socket?.send(clientMessage(["latest"]));
 
+          if (a0 !== "starting") navigate(a0, { replace: true });
           break;
         }
       }
