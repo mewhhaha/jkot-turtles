@@ -37,7 +37,7 @@ export default function Waiting() {
               )}
               key={name}
             >
-              {self === name ? "🙂" : "🙃"}
+              {self === name ? "🙂 " : "🙃 "}
               {name}
             </li>
           );
