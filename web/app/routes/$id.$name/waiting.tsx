@@ -6,18 +6,17 @@ import { useWaitingContext } from "../$id.$name";
 import clsx from "clsx";
 import { clientMessage } from "app/helpers/socket";
 
-type LoaderData = { room: string; self: string };
+type LoaderData = { self: string };
 
 export const loader: LoaderFunction = ({
-  params: { id, name },
+  params: { name },
 }: CloudflareDataFunctionArgs): LoaderData => {
-  invariant(id, "Should exist");
   invariant(name, "Should exist");
-  return { room: id, self: decodeURIComponent(name) };
+  return { self: decodeURIComponent(name) };
 };
 
 export default function Waiting() {
-  const { self, room } = useLoaderData<LoaderData>();
+  const { self } = useLoaderData<LoaderData>();
   const [{ waiting }, socket] = useWaitingContext();
 
   const handleOnStart = () => {
@@ -25,11 +24,7 @@ export default function Waiting() {
   };
 
   return (
-    <section className="flex w-full flex-col space-y-4">
-      <h1 className="bg-gradient-to-tl from-orange-300 to-purple-700 bg-clip-text text-6xl font-extrabold tracking-wide text-transparent">
-        {room}
-      </h1>
-      <hr />
+    <div className="space-y-4">
       <ul className="flex flex-col space-y-2">
         {waiting.map((name) => {
           return (
@@ -49,11 +44,11 @@ export default function Waiting() {
       {waiting[0] === self && (
         <button
           onClick={handleOnStart}
-          className="rounded-md border p-2 text-xl hover:bg-gray-200"
+          className="w-full rounded-md border py-2 px-4 text-xl hover:bg-gray-50"
         >
           Start
         </button>
       )}
-    </section>
+    </div>
   );
 }

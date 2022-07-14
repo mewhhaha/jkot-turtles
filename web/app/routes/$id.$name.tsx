@@ -8,11 +8,11 @@ import {
   useNavigate,
   useOutletContext,
 } from "@remix-run/react";
-import type { Board, Card, ServerMessage, Turtle } from "durable-objects";
+import type { Card, ServerMessage, Tile, Turtle } from "durable-objects";
 import invariant from "invariant";
 import { clientMessage } from "app/helpers/socket";
 
-type LoaderData = { url: string; name: string };
+type LoaderData = { url: string; name: string; room: string };
 
 export const loader: LoaderFunction = ({
   context,
@@ -21,7 +21,7 @@ export const loader: LoaderFunction = ({
   invariant(id, "Should exist");
   invariant(name, "Should exist");
 
-  return { url: `wss://${context.WORKER_URL}/${id}/${name}`, name };
+  return { url: `wss://${context.WORKER_URL}/${id}/${name}`, name, room: id };
 };
 
 type From<Previous, Current> = Partial<Omit<Previous, "type">> & Current;
@@ -32,9 +32,11 @@ type StartedState = From<
   WaitingState,
   {
     type: "started";
-    board: Board;
+    board: Tile[];
     cards: Card[];
+    played?: Card;
     turtle: Turtle;
+    turn: string;
   }
 >;
 
@@ -45,7 +47,15 @@ type State = EmptyState | WaitingState | StartedState | DoneState;
 type Action =
   | { type: "init_waiting"; waiting: string[] }
   | { type: "add_waiting"; joined: string }
-  | { type: "init_started"; board: Board; cards: Card[]; turtle: Turtle };
+  | {
+      type: "init_started";
+      board: Tile[];
+      cards: Card[];
+      turtle: Turtle;
+      turn: string;
+    }
+  | { type: "set_cards"; cards: Card[] }
+  | { type: "update_board"; board: Tile[]; played: Card; turn: string };
 
 export const useWaitingContext = useOutletContext<
   [WaitingState, WebSocket | undefined]
@@ -57,17 +67,12 @@ export const useStartedState = useOutletContext<
 const reducer = (state: State, action: Action): State => {
   switch (action.type) {
     case "init_waiting": {
-      return { type: "waiting", waiting: action.waiting };
+      return { ...state, type: "waiting", waiting: action.waiting };
     }
 
     case "init_started": {
-      return {
-        type: "started",
-        board: action.board,
-        cards: action.cards,
-        turtle: action.turtle,
-        waiting: "waiting" in state ? state.waiting : undefined,
-      };
+      const { type: _, ...rest } = action;
+      return { ...state, ...rest, type: "started" };
     }
   }
 
@@ -79,11 +84,23 @@ const reducer = (state: State, action: Action): State => {
     }
   }
 
+  if (state.type === "started") {
+    switch (action.type) {
+      case "set_cards": {
+        return { ...state, cards: action.cards };
+      }
+      case "update_board": {
+        const { type: _, ...rest } = action;
+        return { ...state, ...rest };
+      }
+    }
+  }
+
   return state;
 };
 
 export default function Id() {
-  const { url } = useLoaderData<LoaderData>();
+  const { url, room } = useLoaderData<LoaderData>();
   const [messages, setMessages] = useState<string[]>([]);
 
   const [socket, status] = useWebSocket(url);
@@ -97,6 +114,21 @@ export default function Id() {
 
       const [t, a0, a1]: ServerMessage = JSON.parse(event.data);
       switch (t) {
+        case "cards": {
+          dispatch({ type: "set_cards", cards: a0 });
+          break;
+        }
+
+        case "played": {
+          dispatch({
+            type: "update_board",
+            board: a0.board,
+            played: a0.card,
+            turn: a0.turn,
+          });
+          break;
+        }
+
         case "joined": {
           dispatch({ type: "add_waiting", joined: a0 });
           break;
@@ -110,6 +142,7 @@ export default function Id() {
               board: a1.board,
               cards: a1.player[1].cards,
               turtle: a1.player[1].turtle,
+              turn: a1.turn,
             });
 
           if (a0 === "starting") socket?.send(clientMessage(["latest"]));
@@ -135,7 +168,11 @@ export default function Id() {
         </h1>
       </header>
       <main className="flex flex-grow justify-center pt-32">
-        <section className="flex w-full max-w-2xl flex-col px-10">
+        <section className="flex w-full max-w-2xl flex-col space-y-4 px-10">
+          <h1 className="bg-gradient-to-tl from-orange-300 to-purple-700 bg-clip-text text-6xl font-extrabold tracking-wide text-transparent">
+            {room}
+          </h1>
+          <hr />
           {state.type !== "none" && <Outlet context={context} />}
         </section>
       </main>

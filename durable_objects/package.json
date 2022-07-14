@@ -22,7 +22,7 @@
     "esbuild": "^0.14.49",
     "prettier": "^2.7.1",
     "typescript": "^4.7.4",
-    "wrangler": "2.0.18"
+    "wrangler": "2.0.19"
   },
   "sideEffects": false
 }

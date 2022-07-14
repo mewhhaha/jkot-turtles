@@ -13,7 +13,7 @@ importers:
       prelude: workspace:^1.0.0
       prettier: ^2.7.1
       typescript: ^4.7.4
-      wrangler: 2.0.18
+      wrangler: 2.0.19
     dependencies:
       itty-router: 2.6.1
       prelude: link:../prelude
@@ -22,7 +22,7 @@ importers:
       esbuild: 0.14.49
       prettier: 2.7.1
       typescript: 4.7.4
-      wrangler: 2.0.18
+      wrangler: 2.0.19
 
   prelude:
     specifiers:
@@ -66,7 +66,7 @@ importers:
       tailwind-override: ^0.6.1
       tailwindcss: ^3.1.6
       typescript: 4.8.0-beta
-      wrangler: 2.0.18
+      wrangler: 2.0.19
     dependencies:
       '@headlessui/react': 1.6.6_biqbaboplfbrettd7655fr4n2y
       '@heroicons/react': 1.0.6_react@18.2.0
@@ -99,7 +99,7 @@ importers:
       prettier-plugin-tailwindcss: 0.1.12_prettier@2.7.1
       tailwindcss: 3.1.6
       typescript: 4.8.0-beta
-      wrangler: 2.0.18
+      wrangler: 2.0.19
 
 packages:
 
@@ -8085,8 +8085,8 @@ packages:
     engines: {node: '>=0.10.0'}
     dev: true
 
-  /wrangler/2.0.18:
-    resolution: {integrity: sha512-BkKoYBjGLKbng9SEsDLjcEH8X0cDuI5mWG9ih6pGO5t7xnvlzcny3r/XhgpCE8UWv+uYM6kd3CqO5JhQf38ZeA==}
+  /wrangler/2.0.19:
+    resolution: {integrity: sha512-ltZtxLSzuvY0xeEvN6nH9epfi0sUn9iy3dUl9P9y/nQIygWp+rIFpzsRGMx8DWykimUyEelMGonYLTawTjv1PQ==}
     engines: {node: '>=16.7.0'}
     hasBin: true
     dependencies:
@@ -8099,7 +8099,6 @@ packages:
       nanoid: 3.3.4
       path-to-regexp: 6.2.1
       selfsigned: 2.0.1
-      semiver: 1.1.0
       xxhash-wasm: 1.0.1
     optionalDependencies:
       fsevents: 2.3.2

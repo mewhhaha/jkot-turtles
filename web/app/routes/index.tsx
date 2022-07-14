@@ -34,7 +34,7 @@ export default function Index() {
 
           <button
             type="submit"
-            className="rounded-md border p-2 text-xl hover:bg-gray-200"
+            className="rounded-md border p-2 text-xl hover:bg-gray-50"
           >
             Join
           </button>

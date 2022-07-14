@@ -5,7 +5,7 @@ export type Turtle = "green" | "purple" | "blue" | "red" | "yellow";
 
 export type Game = "waiting" | "started" | "starting" | "done";
 
-export type Card =
+export type CardEffect =
   | `${Turtle}++`
   | `${Turtle}+`
   | `${Turtle}-`
@@ -13,6 +13,8 @@ export type Card =
   | "any-"
   | "any↑"
   | "any↑↑";
+
+export type Card = [string, CardEffect];
 
 export type Tile = Turtle[];
 export type Board = [Set<Turtle>, ...Tile[]];
@@ -23,15 +25,25 @@ export type ServerMessage =
   | ["error", string]
   | ["game", "done"]
   | ["game", "starting"]
-  | ["game", "started", { board: Board; player: Player }]
+  | [
+      "game",
+      "started",
+      { board: Tile[]; player: Player; turn: string; played: Card | undefined }
+    ]
   | ["game", "waiting", string[]]
   | ["reconnected", string]
-  | ["joined", string];
+  | ["joined", string]
+  | ["cards", Card[]]
+  | ["played", { board: Tile[]; card: Card; turn: string }];
 
 const all = ["green", "purple", "blue", "red", "yellow"] as const;
 
-const makeDeck = () => {
-  const colors: Card[] = all
+let i = 0;
+
+const addId = <T extends string>(t: T): [string, T] => [(i++).toString(), t];
+
+const makeDeck = (): Card[] => {
+  const colors: CardEffect[] = all
     .map((x) => {
       return [`${x}++` as const]
         .concat(new Array(5).fill(`${x}+` as const))
@@ -39,14 +51,14 @@ const makeDeck = () => {
     })
     .flat();
 
-  const any: Card[] = new Array(5)
+  const any: CardEffect[] = new Array(5)
     .fill(`any+`)
     .concat(new Array(2).fill("any-"));
-  const last: Card[] = new Array(3)
+  const last: CardEffect[] = new Array(3)
     .fill(`any↑`)
     .concat(new Array(2).fill("any↑↑"));
 
-  return shuffle(colors.concat(any).concat(last));
+  return shuffle(colors.concat(any).concat(last).map(addId));
 };
 
 const removeCard = (cards: Card[], index: number) => {
@@ -65,6 +77,7 @@ export class TurtleGame extends DurableObjectTemplate {
   waiting: Set<string>;
   current: number;
   players: Player[];
+  played?: Card;
   board: Board;
 
   constructor(_state: DurableObjectState) {
@@ -98,7 +111,7 @@ export class TurtleGame extends DurableObjectTemplate {
         this.waiting.forEach((player) => {
           const turtle = turtles.pop();
           if (turtle) {
-            const cards = this.deck.splice(5);
+            const cards = this.deck.splice(0, 5);
             this.players.push([player, { turtle, cards }]);
           }
         });
@@ -127,7 +140,16 @@ export class TurtleGame extends DurableObjectTemplate {
         }
 
         websocket.send(
-          serverMessage(["game", "started", { board: this.board, player }])
+          serverMessage([
+            "game",
+            "started",
+            {
+              board: serializeBoard(this.board),
+              player,
+              turn: this.players[this.current][0],
+              played: this.played,
+            },
+          ])
         );
         break;
       }
@@ -139,10 +161,23 @@ export class TurtleGame extends DurableObjectTemplate {
         if (!card) return;
 
         player.cards = removeCard(player.cards, cardIndex);
-        player.cards = player.cards.concat(this.deck.splice(1)); // Pickup card from deck
+        player.cards = player.cards.concat(this.deck.splice(0, 1)); // Pickup card from deck
 
         this.board = playCard(this.board, card, wildcard);
         this.current = nextTurn(this.current, this.players);
+        this.played = card;
+
+        websocket.send(serverMessage(["cards", player.cards]));
+        this.sessions.broadcast(
+          serverMessage([
+            "played",
+            {
+              board: serializeBoard(this.board),
+              card,
+              turn: this.players[this.current][0],
+            },
+          ])
+        );
       }
     }
   }
@@ -166,7 +201,16 @@ export class TurtleGame extends DurableObjectTemplate {
             }
 
             websocket.send(
-              serverMessage(["game", "started", { board: this.board, player }])
+              serverMessage([
+                "game",
+                "started",
+                {
+                  board: serializeBoard(this.board),
+                  player,
+                  turn: this.players[this.current][0],
+                  played: this.played,
+                },
+              ])
             );
             break;
           }
@@ -213,6 +257,10 @@ export class TurtleGame extends DurableObjectTemplate {
     });
   }
 }
+
+const serializeBoard = ([first, ...rest]: Board): Tile[] => {
+  return [[...first], ...rest];
+};
 
 const move = (
   [f, ...rest]: Board,
@@ -307,8 +355,8 @@ const turtleLast = ([first, ...rest]: Board, turtle: Turtle) => {
   return false;
 };
 
-const playCard = (board: Board, card: Card, wildcard?: Turtle): Board => {
-  switch (card) {
+const playCard = (board: Board, [, effect]: Card, wildcard?: Turtle): Board => {
+  switch (effect) {
     case "any+": {
       if (wildcard !== undefined) {
         return move(board, wildcard, 1);
@@ -331,18 +379,18 @@ const playCard = (board: Board, card: Card, wildcard?: Turtle): Board => {
       }
       break;
     default: {
-      if (endsWith(card, "++")) {
-        const color = removeEnd(card, "++");
+      if (endsWith(effect, "++")) {
+        const color = removeEnd(effect, "++");
         return move(board, color, 2);
       }
 
-      if (endsWith(card, "+")) {
-        const color = removeEnd(card, "+");
+      if (endsWith(effect, "+")) {
+        const color = removeEnd(effect, "+");
         return move(board, color, 1);
       }
 
-      if (endsWith(card, "-")) {
-        const color = removeEnd(card, "-");
+      if (endsWith(effect, "-")) {
+        const color = removeEnd(effect, "-");
         return move(board, color, -1);
       }
     }
