@@ -4,10 +4,12 @@ import { useLoaderData } from "@remix-run/react";
 import { clientMessage } from "app/helpers/socket";
 import type { CloudflareDataFunctionArgs } from "app/types";
 import clsx from "clsx";
-import type { CardEffect, Turtle } from "durable-objects";
+import type { CardEffect, Tile, Turtle } from "durable-objects";
 import invariant from "invariant";
-import { useId } from "react";
 import { useStartedState } from "../$id.$name";
+import { turtles } from "app/helpers/turtle";
+import { TurtlePiece } from "app/components/TurtlePiece";
+import { CardPiece } from "app/components/CardPiece";
 
 type LoaderData = { self: string };
 
@@ -26,10 +28,10 @@ export default function Started() {
 
   return (
     <div className="flex flex-col space-y-4">
-      <div className="grid grid-cols-11 divide-x-4 bg-green-50">
+      <div className="grid grid-cols-10 divide-x-4 bg-green-50">
         {board.map((tile, i) => {
           return (
-            <ul key={i} className="flex h-28 flex-col-reverse items-center p-1">
+            <ul key={i} className="flex h-32 flex-col-reverse items-center p-1">
               {tile.map((t) => {
                 return (
                   <li key={t}>
@@ -55,6 +57,9 @@ export default function Started() {
         {cards.map(([id, effect], i) => {
           const [turtle, move] = parseEffect(effect);
 
+          const anyOptions =
+            move === "↑" || move === "↑↑" ? getLastTurtles(board) : turtles;
+
           return (
             <li
               key={id}
@@ -69,23 +74,52 @@ export default function Started() {
               <Transition
                 show
                 appear
-                enter="transition-opacity duration-800 pointer-events-none"
+                enter="transition-opacity duration-1000 pointer-events-none"
                 enterFrom="opacity-0"
                 enterTo="opacity-100"
               >
-                <button
-                  className={clsx(
-                    "group relative h-32 w-20",
-                    turn === self ? "cursor-pointer" : "cursor-not-allowed"
-                  )}
-                  onClick={() => {
-                    socket?.send(clientMessage(["play", i]));
-                  }}
-                >
-                  <div className="absolute inset-0 transition-transform group-hover:-translate-y-1/4">
+                {turtle === "any" ? (
+                  <AnyCardButton disabled={turn !== self}>
                     <CardPiece turtle={turtle} move={move} />
-                  </div>
-                </button>
+                    <div className="absolute -inset-4 hidden transform flex-col space-y-2 overflow-y-auto rounded-md border border-gray-100 bg-white p-2 shadow-md group-focus-within:flex group-hover:flex">
+                      {anyOptions.map((t) => {
+                        return (
+                          <button
+                            key={t}
+                            disabled={turn !== self}
+                            className={clsx(
+                              {
+                                "text-red-500": t === "red",
+                                "text-yellow-500": t === "yellow",
+                                "text-purple-500": t === "purple",
+                                "text-green-500": t === "green",
+                                "text-blue-500": t === "blue",
+                              },
+                              turn !== self
+                                ? "cursor-not-allowed"
+                                : "cursor-pointer",
+                              "rounded-md border px-2 py-1 hover:bg-gray-50"
+                            )}
+                            onClick={() => {
+                              socket?.send(clientMessage(["play", i, t]));
+                            }}
+                          >
+                            {t}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </AnyCardButton>
+                ) : (
+                  <CardButton
+                    disabled={turn !== self}
+                    onClick={() => {
+                      socket?.send(clientMessage(["play", i]));
+                    }}
+                  >
+                    <CardPiece turtle={turtle} move={move} />
+                  </CardButton>
+                )}
               </Transition>
             </li>
           );
@@ -94,6 +128,48 @@ export default function Started() {
     </div>
   );
 }
+
+type AnyCardButtonProps = {
+  disabled?: boolean;
+  children: React.ReactNode;
+};
+
+const AnyCardButton = ({ disabled, children }: AnyCardButtonProps) => {
+  return (
+    <button
+      disabled={disabled}
+      className={clsx(
+        "group relative h-32 w-20 transition-opacity",
+        disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"
+      )}
+    >
+      <div className="absolute inset-0 transition-transform">{children}</div>
+    </button>
+  );
+};
+
+type CardButtonProps = {
+  disabled?: boolean;
+  children: React.ReactNode;
+  onClick: () => void;
+};
+
+const CardButton = ({ disabled, onClick, children }: CardButtonProps) => {
+  return (
+    <button
+      disabled={disabled}
+      className={clsx(
+        "group relative h-32 w-20 transition-opacity",
+        disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"
+      )}
+      onClick={onClick}
+    >
+      <div className="absolute inset-0 transition-transform group-hover:-translate-y-1/4">
+        {children}
+      </div>
+    </button>
+  );
+};
 
 const parseEffect = (effect: CardEffect) => {
   const m = effect.match(/(\w+)(.+)/);
@@ -105,60 +181,6 @@ const parseEffect = (effect: CardEffect) => {
   ] as const;
 };
 
-type CardPieceProps = {
-  turtle: Turtle | "any";
-  move: "++" | "+" | "-" | "↑" | "↑↑";
-};
-
-const CardPiece = ({ turtle, move }: CardPieceProps) => {
-  return (
-    <div
-      className={clsx(
-        {
-          "from-red-500 group-hover:from-red-400": turtle === "red",
-          "from-yellow-500 group-hover:from-yellow-400": turtle === "yellow",
-          "from-purple-500 group-hover:from-purple-400": turtle === "purple",
-          "from-green-500 group-hover:from-green-400": turtle === "green",
-          "from-blue-500 group-hover:from-blue-400": turtle === "blue",
-          "from-gray-500 group-hover:from-gray-400": turtle === "any",
-        },
-        "flex h-full w-full items-center justify-center rounded-md border border-black bg-gradient-to-b text-4xl shadow-md"
-      )}
-    >
-      {move}
-    </div>
-  );
-};
-
-type TurtlePieceProps = {
-  turtle: Turtle;
-};
-
-const TurtlePiece = ({ turtle }: TurtlePieceProps) => {
-  const id = useId();
-  return (
-    <div
-      className={clsx(
-        {
-          "text-red-500": turtle === "red",
-          "text-yellow-500": turtle === "yellow",
-          "text-purple-500": turtle === "purple",
-          "text-green-500": turtle === "green",
-          "text-blue-500": turtle === "blue",
-        },
-        "group relative select-none"
-      )}
-      aria-describedby={id}
-    >
-      ,=,e
-      <div
-        id={id}
-        role="tooltip"
-        className="pointer-events-none absolute top-0 hidden -translate-y-full transform rounded-md bg-black px-2 py-1 group-hover:block"
-      >
-        {turtle}
-        <div className="absolute bottom-0 left-0 h-2 w-2 translate-x-full translate-y-1/2 rotate-45 transform bg-black"></div>
-      </div>
-    </div>
-  );
+const getLastTurtles = (board: Tile[]) => {
+  return board.filter((t) => t.length !== 0)[0];
 };

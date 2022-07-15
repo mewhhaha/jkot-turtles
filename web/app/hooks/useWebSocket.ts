@@ -29,8 +29,8 @@ export const useWebSocket = (
         setStatus("error");
       };
 
-      const handleClose = () => {
-        if (reconnect && reconnects.current <= retries) {
+      const handleClose = (ev: CloseEvent) => {
+        if (ev.code !== 1000 && reconnect && reconnects.current <= retries) {
           reconnects.current += 1;
           setStatus("reconnecting");
           setSocket(new WebSocket(socketURL));

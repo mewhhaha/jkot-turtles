@@ -8,7 +8,13 @@ import {
   useNavigate,
   useOutletContext,
 } from "@remix-run/react";
-import type { Card, ServerMessage, Tile, Turtle } from "durable-objects";
+import type {
+  Card,
+  ServerMessage,
+  Tile,
+  Turtle,
+  Winner,
+} from "durable-objects";
 import invariant from "invariant";
 import { clientMessage } from "app/helpers/socket";
 
@@ -40,7 +46,10 @@ type StartedState = From<
   }
 >;
 
-type DoneState = From<StartedState, { type: "done" }>;
+type DoneState = From<
+  StartedState,
+  { type: "done"; board: Tile[]; winners: Winner[] }
+>;
 
 type State = EmptyState | WaitingState | StartedState | DoneState;
 
@@ -53,15 +62,20 @@ type Action =
       cards: Card[];
       turtle: Turtle;
       turn: string;
+      played?: Card;
     }
   | { type: "set_cards"; cards: Card[] }
-  | { type: "update_board"; board: Tile[]; played: Card; turn: string };
+  | { type: "update_board"; board: Tile[]; played: Card; turn: string }
+  | { type: "init_done"; board: Tile[]; winners: Winner[] };
 
 export const useWaitingContext = useOutletContext<
   [WaitingState, WebSocket | undefined]
 >;
 export const useStartedState = useOutletContext<
   [StartedState, WebSocket | undefined]
+>;
+export const useDoneState = useOutletContext<
+  [DoneState, WebSocket | undefined]
 >;
 
 const reducer = (state: State, action: Action): State => {
@@ -103,8 +117,8 @@ export default function Id() {
   const { url, room } = useLoaderData<LoaderData>();
   const [messages, setMessages] = useState<string[]>([]);
 
-  const [socket, status] = useWebSocket(url);
   const [state, dispatch] = useReducer(reducer, { type: "none" });
+  const [socket, status] = useWebSocket(url, { reconnect: true, retries: 3 });
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -133,8 +147,25 @@ export default function Id() {
           dispatch({ type: "add_waiting", joined: a0 });
           break;
         }
+
+        case "done": {
+          dispatch({
+            type: "init_done",
+            board: a0.board,
+            winners: a0.winners,
+          });
+          return;
+        }
+
         case "game": {
           if (a0 === "waiting") dispatch({ type: "init_waiting", waiting: a1 });
+
+          if (a0 === "done")
+            dispatch({
+              type: "init_done",
+              board: a1.board,
+              winners: a1.winners,
+            });
 
           if (a0 === "started")
             dispatch({
@@ -142,6 +173,7 @@ export default function Id() {
               board: a1.board,
               cards: a1.player[1].cards,
               turtle: a1.player[1].turtle,
+              played: a1.played,
               turn: a1.turn,
             });
 
@@ -151,6 +183,10 @@ export default function Id() {
           break;
         }
       }
+    };
+
+    return () => {
+      socket.onmessage = null;
     };
   }, [navigate, socket]);
 

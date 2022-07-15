@@ -3,7 +3,10 @@ lockfileVersion: 5.4
 importers:
 
   .:
-    specifiers: {}
+    specifiers:
+      typescript: 4.8.0-beta
+    devDependencies:
+      typescript: 4.8.0-beta
 
   durable_objects:
     specifiers:

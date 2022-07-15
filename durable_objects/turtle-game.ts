@@ -15,15 +15,15 @@ export type CardEffect =
   | "any↑↑";
 
 export type Card = [string, CardEffect];
-
+export type Winner = [Turtle, string];
 export type Tile = Turtle[];
-export type Board = [Set<Turtle>, ...Tile[]];
+export type Board = [Set<Turtle>, ...Tile[], Tile];
 export type Player = [string, { turtle: Turtle; cards: Card[] }];
 
 export type ClientMessage = ["start"] | ["latest"] | ["play", number, Turtle?];
 export type ServerMessage =
   | ["error", string]
-  | ["game", "done"]
+  | ["game", "done", { board: Tile[]; winners: Winner[] }]
   | ["game", "starting"]
   | [
       "game",
@@ -34,7 +34,8 @@ export type ServerMessage =
   | ["reconnected", string]
   | ["joined", string]
   | ["cards", Card[]]
-  | ["played", { board: Tile[]; card: Card; turn: string }];
+  | ["played", { board: Tile[]; card: Card; turn: string }]
+  | ["done", { board: Tile[]; winners: Winner[] }];
 
 const all = ["green", "purple", "blue", "red", "yellow"] as const;
 
@@ -78,6 +79,7 @@ export class TurtleGame extends DurableObjectTemplate {
   current: number;
   players: Player[];
   played?: Card;
+  winners: Winner[];
   board: Board;
 
   constructor(_state: DurableObjectState) {
@@ -86,11 +88,12 @@ export class TurtleGame extends DurableObjectTemplate {
     this.game = "waiting";
     this.deck = makeDeck();
     this.discard = [];
+    this.winners = [];
     this.admin = undefined;
     this.waiting = new Set();
     this.current = 0;
     this.players = [];
-    this.board = [new Set(all), ...new Array(10).fill([])];
+    this.board = [new Set(all), ...new Array(8).fill([]), []];
   }
 
   handleWaiting(websocket: WebSocket, name: string, [t]: ClientMessage) {
@@ -167,6 +170,8 @@ export class TurtleGame extends DurableObjectTemplate {
         this.current = nextTurn(this.current, this.players);
         this.played = card;
 
+        const winners = findWinners(this.board, this.players);
+
         websocket.send(serverMessage(["cards", player.cards]));
         this.sessions.broadcast(
           serverMessage([
@@ -178,6 +183,17 @@ export class TurtleGame extends DurableObjectTemplate {
             },
           ])
         );
+
+        if (winners !== undefined) {
+          this.winners = winners;
+          this.game = "done";
+          this.sessions.broadcast(
+            serverMessage([
+              "done",
+              { board: serializeBoard(this.board), winners },
+            ])
+          );
+        }
       }
     }
   }
@@ -187,8 +203,14 @@ export class TurtleGame extends DurableObjectTemplate {
       onConnect: (websocket) => {
         switch (this.game) {
           case "done": {
-            websocket.send(serverMessage(["game", "done"]));
-            websocket.close();
+            websocket.send(
+              serverMessage([
+                "game",
+                "done",
+                { board: serializeBoard(this.board), winners: this.winners },
+              ])
+            );
+            websocket.close(1000, "game is done");
             break;
           }
 
@@ -196,7 +218,7 @@ export class TurtleGame extends DurableObjectTemplate {
             const player = this.players.find((p) => p[0] === name);
             if (!player) {
               websocket.send(serverMessage(["error", "invalid user"]));
-              websocket.close();
+              websocket.close(1000, "invalid user");
               return;
             }
 
@@ -225,7 +247,7 @@ export class TurtleGame extends DurableObjectTemplate {
             }
             if (this.waiting.size === 4) {
               websocket.send(serverMessage(["error", "full"]));
-              websocket.close();
+              websocket.close(1000, "server is full");
               return;
             }
 
@@ -241,7 +263,7 @@ export class TurtleGame extends DurableObjectTemplate {
       onMessage: (websocket, message: MessageEvent) => {
         if (this.game === "done") {
           websocket.send(serverMessage(["error", "done"]));
-          websocket.close();
+          websocket.close(1000, "game is done");
         }
 
         const msg = JSON.parse(message.data as string) as ClientMessage;
@@ -355,6 +377,21 @@ const turtleLast = ([first, ...rest]: Board, turtle: Turtle) => {
   return false;
 };
 
+const findWinners = (
+  [_, ...rest]: Board,
+  players: Player[]
+): Winner[] | undefined => {
+  const winners = rest[rest.length - 1]
+    .map((turtle): Winner | undefined => {
+      const player = players.find((p) => p[1].turtle === turtle);
+      if (player === undefined) return undefined;
+      return [turtle, player[0]];
+    })
+    .filter(exists);
+  if (winners.length === 0) return undefined;
+  return [...winners].reverse();
+};
+
 const playCard = (board: Board, [, effect]: Card, wildcard?: Turtle): Board => {
   switch (effect) {
     case "any+": {
@@ -402,3 +439,5 @@ const playCard = (board: Board, [, effect]: Card, wildcard?: Turtle): Board => {
 const nextTurn = (turn: number, players: Player[]) => {
   return (turn + 1) % players.length;
 };
+
+const exists = <A>(a: A): a is NonNullable<A> => a !== null && a !== undefined;
