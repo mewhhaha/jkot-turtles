@@ -30,7 +30,12 @@ export const useWebSocket = (
       };
 
       const handleClose = (ev: CloseEvent) => {
-        if (ev.code !== 1000 && reconnect && reconnects.current <= retries) {
+        console.log(ev.code);
+        if (
+          ![1000, 1005].includes(ev.code) &&
+          reconnect &&
+          reconnects.current <= retries
+        ) {
           reconnects.current += 1;
           setStatus("reconnecting");
           setSocket(new WebSocket(socketURL));

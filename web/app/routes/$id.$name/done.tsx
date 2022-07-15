@@ -20,6 +20,16 @@ export default function Done() {
           );
         })}
       </div>
+      <div>
+        {winners.map(([turtle, name]) => {
+          return (
+            <div key={turtle}>
+              <TurtlePiece turtle={turtle} />
+              <label className="text-lg font-bold">{name}</label>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

@@ -138,7 +138,7 @@ export class TurtleGame extends DurableObjectTemplate {
         const player = this.players.find((p) => p[0] === name);
         if (!player) {
           websocket.send(serverMessage(["error", "invalid user"]));
-          websocket.close();
+          websocket.close(1000, "invalid user");
           return;
         }
 

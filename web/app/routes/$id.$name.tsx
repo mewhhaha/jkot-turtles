@@ -17,6 +17,7 @@ import type {
 } from "durable-objects";
 import invariant from "invariant";
 import { clientMessage } from "app/helpers/socket";
+import { useMatch } from "react-router";
 
 type LoaderData = { url: string; name: string; room: string };
 
@@ -88,6 +89,11 @@ const reducer = (state: State, action: Action): State => {
       const { type: _, ...rest } = action;
       return { ...state, ...rest, type: "started" };
     }
+
+    case "init_done": {
+      const { type: _, ...rest } = action;
+      return { ...state, ...rest, type: "done" };
+    }
   }
 
   if (state.type === "waiting") {
@@ -116,6 +122,8 @@ const reducer = (state: State, action: Action): State => {
 export default function Id() {
   const { url, room } = useLoaderData<LoaderData>();
   const [messages, setMessages] = useState<string[]>([]);
+
+  const match = useMatch(":id/:name/:state");
 
   const [state, dispatch] = useReducer(reducer, { type: "none" });
   const [socket, status] = useWebSocket(url, { reconnect: true, retries: 3 });
@@ -209,7 +217,7 @@ export default function Id() {
             {room}
           </h1>
           <hr />
-          {state.type !== "none" && <Outlet context={context} />}
+          {state.type === match?.params.state && <Outlet context={context} />}
         </section>
       </main>
     </div>
