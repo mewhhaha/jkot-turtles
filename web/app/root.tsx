@@ -18,8 +18,8 @@ export const links: LinksFunction = () => {
 
 export const meta: MetaFunction = () => {
   return {
-    title: "Turtles game",
-    description: "This is the turtles game",
+    title: "Turtles Board Game",
+    description: "This is the Turtles Board Game",
   };
 };
 
