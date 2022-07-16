@@ -26,6 +26,10 @@ export const init = <ClassDO extends Record<any, any>>(
             new Request(`https://do/${method}/${encodedArgs}`, {
               method: request.method,
               headers: request.headers,
+              body: request.body,
+              formData: request.formData,
+              redirect: request.redirect,
+              bodyUsed: request.bodyUsed,
               cf: request.cf,
             })
           );
