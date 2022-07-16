@@ -37,36 +37,6 @@ export type ServerMessage =
 
 const all = ["green", "purple", "blue", "red", "yellow"] as const;
 
-let i = 0;
-
-const addId = <T extends string>(t: T): [string, T] => [(i++).toString(), t];
-
-const makeDeck = (): Card[] => {
-  const colors: CardEffect[] = all
-    .map((x) => {
-      return [`${x}++` as const]
-        .concat(new Array(5).fill(`${x}+` as const))
-        .concat(new Array(2).fill(`${x}-` as const));
-    })
-    .flat();
-
-  const any: CardEffect[] = new Array(5)
-    .fill(`any+`)
-    .concat(new Array(2).fill("any-"));
-  const last: CardEffect[] = new Array(3)
-    .fill(`any↑`)
-    .concat(new Array(2).fill("any↑↑"));
-
-  return shuffle(colors.concat(any).concat(last).map(addId));
-};
-
-const removeCard = (cards: Card[], index: number) => {
-  return cards.slice(0, index).concat(cards.slice(index + 1));
-};
-
-const serverMessage = <M extends ServerMessage>(message: M) =>
-  JSON.stringify(message);
-
 export class TurtleGame extends DurableObjectTemplate {
   sessions: ReturnType<typeof createSessions>;
   game: Game;
@@ -340,6 +310,18 @@ const move = (
   return [first, ...rest];
 };
 
+/**
+ * type guard to disambiguate a union of strings based on their endings
+ *
+ * @example
+ *
+ * ```ts
+ * const str = "hello world" as "hello world" | "hello bye";
+ * if (endsWith(str, "world")) {
+ *  console.log(str) // str is of type "hello world"
+ * }
+ * ```
+ */
 const endsWith = <B extends string, A extends string>(
   value: B,
   ending: B extends `${string}${A}` ? A : never
@@ -347,6 +329,22 @@ const endsWith = <B extends string, A extends string>(
   return value.endsWith(ending);
 };
 
+const str = "hello world" as "hello world" | "hello bye";
+if (endsWith(str, "world")) {
+  console.log(str); // str is of type "hello world"
+}
+
+/**
+ * function to remove the end of a string in a typed way
+ *
+ * @example
+ *
+ * ```ts
+ * removeEnd("hello world", "world")
+ *
+ * // returns "hello " (typed as "hello ")
+ * ```
+ */
 const removeEnd = <B extends `${string}${A}`, A extends string>(
   value: B,
   ending: A
@@ -356,13 +354,43 @@ const removeEnd = <B extends `${string}${A}`, A extends string>(
     : never;
 };
 
-const pickupTurtle = (tile: Tile, turtle: Turtle) => {
+/**
+ * function to determining the moving and stay turtles when moving a specific turtle on a tileIndex
+ *
+ * This is similar to a `splitAt` function if you've ever used one before
+ * @example
+ * ```ts
+ * pickupTurtle(["red", "blue", "green"], "blue")
+ *
+ * // returns [["red"], ["blue", "green"]]
+ * ```
+ */
+const pickupTurtle = (
+  tile: Tile,
+  turtle: Turtle
+): [moving: Tile, remaining: Tile] => {
   const turtleIndex = tile.indexOf(turtle);
+  if (turtleIndex !== -1) return [[], tile];
+
   const moving = tile.slice(turtleIndex);
   const remaining = tile.slice(0, turtleIndex);
   return [moving, remaining];
 };
 
+/** function to determine if the given turtle is in (possibly shared) last place
+ *
+ * @example
+ * ```ts
+ * turtleLast([new Set(), ["red", "green"], ["blue"]], "red")
+ * // returns true
+ *
+ * turtleLast([new Set(), ["red", "green"], ["blue"]], "green")
+ * // returns true
+ *
+ * turtleLast([new Set(), ["red", "green"], ["blue"]], "blue")
+ * // return false
+ * ```
+ */
 const turtleLast = ([first, ...rest]: Board, turtle: Turtle) => {
   if (first.has(turtle)) return true;
 
@@ -374,6 +402,16 @@ const turtleLast = ([first, ...rest]: Board, turtle: Turtle) => {
   return false;
 };
 
+/**
+ * function to return winners on a board, if any, or undefined
+ *
+ * @example
+ * ```ts
+ * findWinners([new Set(), [], ["red"]], [["me", { turtle: "red", cards: [] }]])
+ *
+ * // returns [["red", "me"]]
+ * ```
+ */
 const findWinners = (
   [_, ...rest]: Board,
   players: Player[]
@@ -389,6 +427,9 @@ const findWinners = (
   return winners;
 };
 
+/**
+ * function to apply the card effect to the board and return the updated board
+ */
 const playCard = (board: Board, [, effect]: Card, wildcard?: Turtle): Board => {
   switch (effect) {
     case "any+": {
@@ -433,8 +474,67 @@ const playCard = (board: Board, [, effect]: Card, wildcard?: Turtle): Board => {
   return board;
 };
 
+/**
+ * function to increment the turn capped by the player length
+ */
 const nextTurn = (turn: number, players: Player[]) => {
   return (turn + 1) % players.length;
 };
 
+/** type guard to filter away nullable states */
 const exists = <A>(a: A): a is NonNullable<A> => a !== null && a !== undefined;
+
+/**
+ * function to create unique ids, by just incrementing from 0
+ */
+const addId = (() => {
+  let i = 0;
+  return <T extends string>(t: T): [string, T] => [(i++).toString(), t];
+})();
+
+/**
+ * function to make a new shuffled default deck
+ *
+ * 5 ${turtle}+ cards
+ * 2 ${turtle}- cards
+ * 1 ${turtle}++ card
+ *
+ * 5 any+ cards
+ * 2 any- cards
+ *
+ * 3 any↑ cards
+ * 2 any↑↑ cards
+ */
+const makeDeck = (): Card[] => {
+  const colors: CardEffect[] = all
+    .map((x) => {
+      return [`${x}++` as const]
+        .concat(new Array(5).fill(`${x}+` as const))
+        .concat(new Array(2).fill(`${x}-` as const));
+    })
+    .flat();
+
+  const any: CardEffect[] = new Array(5)
+    .fill(`any+`)
+    .concat(new Array(2).fill("any-"));
+  const last: CardEffect[] = new Array(3)
+    .fill(`any↑`)
+    .concat(new Array(2).fill("any↑↑"));
+
+  return shuffle(colors.concat(any).concat(last).map(addId));
+};
+
+/**
+ * function to a card at a specific index in a hand of set_cards
+ *
+ * @example
+ */
+const removeCard = (cards: Card[], index: number) => {
+  return cards.slice(0, index).concat(cards.slice(index + 1));
+};
+
+/**
+ * function to properly type the incoming message before stringifying it
+ */
+const serverMessage = <M extends ServerMessage>(message: M) =>
+  JSON.stringify(message);

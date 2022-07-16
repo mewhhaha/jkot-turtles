@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useReducer, useState } from "react";
+import { useEffect, useMemo, useReducer } from "react";
 import type { LoaderFunction } from "@remix-run/cloudflare";
 import { useWebSocket } from "../hooks/useWebSocket";
 import type { CloudflareDataFunctionArgs } from "../types";
@@ -118,19 +118,16 @@ const reducer = (state: State, action: Action): State => {
   return state;
 };
 
-export default function Id() {
+export default function IdName() {
   const { url, room } = useLoaderData<LoaderData>();
-  const [messages, setMessages] = useState<string[]>([]);
 
   const [state, dispatch] = useReducer(reducer, { type: "none" });
-  const [socket, status] = useWebSocket(url, { reconnect: true, retries: 3 });
+  const [socket] = useWebSocket(url, { reconnect: true, retries: 3 });
   const navigate = useNavigate();
 
   useEffect(() => {
     if (socket === undefined) return;
     socket.onmessage = (event) => {
-      setMessages((p) => [...p, event.data]);
-
       const [t, a0]: ServerMessage = JSON.parse(event.data);
       switch (t) {
         case "cards": {
@@ -193,11 +190,6 @@ export default function Id() {
       socket.onmessage = null;
     };
   }, [navigate, socket]);
-
-  useEffect(() => {
-    console.log(status);
-    console.log(messages);
-  }, [messages, status]);
 
   const context = useMemo(() => [state, socket], [socket, state]);
   return (

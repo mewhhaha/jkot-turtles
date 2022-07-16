@@ -23,7 +23,10 @@ export const TurtlePiece = ({ turtle }: TurtlePieceProps) => {
       )}
       aria-describedby={id}
     >
-      <TurtleIcon className="mx-1 h-12 w-12 -scale-x-100 sm:mx-2 sm:h-16 sm:w-16" />
+      <TurtleIcon
+        className="mx-1 h-12 w-12 -scale-x-100 sm:mx-2 sm:h-16 sm:w-16"
+        aria-label="turtle"
+      />
       <div
         id={id}
         role="tooltip"
