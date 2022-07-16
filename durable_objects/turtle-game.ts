@@ -23,14 +23,12 @@ export type Player = [string, { turtle: Turtle; cards: Card[] }];
 export type ClientMessage = ["start"] | ["latest"] | ["play", number, Turtle?];
 export type ServerMessage =
   | ["error", string]
-  | ["game", "done", { board: Tile[]; winners: Winner[] }]
-  | ["game", "starting"]
+  | ["starting"]
   | [
-      "game",
       "started",
       { board: Tile[]; player: Player; turn: string; played: Card | undefined }
     ]
-  | ["game", "waiting", string[]]
+  | ["waiting", string[]]
   | ["reconnected", string]
   | ["joined", string]
   | ["cards", Card[]]
@@ -119,7 +117,7 @@ export class TurtleGame extends DurableObjectTemplate {
           }
         });
         this.players = shuffle(this.players);
-        this.sessions.broadcast(serverMessage(["game", "starting"]));
+        this.sessions.broadcast(serverMessage(["starting"]));
         return;
       }
       default: {
@@ -144,7 +142,6 @@ export class TurtleGame extends DurableObjectTemplate {
 
         websocket.send(
           serverMessage([
-            "game",
             "started",
             {
               board: serializeBoard(this.board),
@@ -205,12 +202,11 @@ export class TurtleGame extends DurableObjectTemplate {
           case "done": {
             websocket.send(
               serverMessage([
-                "game",
                 "done",
                 { board: serializeBoard(this.board), winners: this.winners },
               ])
             );
-            websocket.close(1000, "game is done");
+
             break;
           }
 
@@ -224,7 +220,6 @@ export class TurtleGame extends DurableObjectTemplate {
 
             websocket.send(
               serverMessage([
-                "game",
                 "started",
                 {
                   board: serializeBoard(this.board),
@@ -238,9 +233,7 @@ export class TurtleGame extends DurableObjectTemplate {
           }
 
           case "waiting": {
-            websocket.send(
-              serverMessage(["game", "waiting", [...this.waiting]])
-            );
+            websocket.send(serverMessage(["waiting", [...this.waiting]]));
             if (this.waiting.has(name)) {
               this.sessions.broadcast(serverMessage(["reconnected", name]));
               return;
@@ -262,8 +255,12 @@ export class TurtleGame extends DurableObjectTemplate {
       },
       onMessage: (websocket, message: MessageEvent) => {
         if (this.game === "done") {
-          websocket.send(serverMessage(["error", "done"]));
-          websocket.close(1000, "game is done");
+          websocket.send(
+            serverMessage([
+              "done",
+              { board: serializeBoard(this.board), winners: this.winners },
+            ])
+          );
         }
 
         const msg = JSON.parse(message.data as string) as ClientMessage;
@@ -389,7 +386,7 @@ const findWinners = (
     })
     .filter(exists);
   if (winners.length === 0) return undefined;
-  return [...winners].reverse();
+  return winners;
 };
 
 const playCard = (board: Board, [, effect]: Card, wildcard?: Turtle): Board => {

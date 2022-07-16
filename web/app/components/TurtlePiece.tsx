@@ -1,6 +1,7 @@
 import clsx from "clsx";
 import type { Turtle } from "durable-objects";
 import { useId } from "react";
+import { TurtleIcon } from "./TurtleIcon";
 
 type TurtlePieceProps = {
   turtle: Turtle;
@@ -12,17 +13,17 @@ export const TurtlePiece = ({ turtle }: TurtlePieceProps) => {
     <div
       className={clsx(
         {
-          "text-red-500": turtle === "red",
-          "text-yellow-500": turtle === "yellow",
-          "text-purple-500": turtle === "purple",
-          "text-green-500": turtle === "green",
-          "text-blue-500": turtle === "blue",
+          "text-red-700": turtle === "red",
+          "text-yellow-700": turtle === "yellow",
+          "text-purple-700": turtle === "purple",
+          "text-green-700": turtle === "green",
+          "text-blue-700": turtle === "blue",
         },
         "group relative select-none"
       )}
       aria-describedby={id}
     >
-      ,=,e
+      <TurtleIcon className="mx-1 h-12 w-12 -scale-x-100 sm:mx-2 sm:h-16 sm:w-16" />
       <div
         id={id}
         role="tooltip"

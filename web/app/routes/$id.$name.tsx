@@ -134,11 +134,11 @@ export default function Id() {
     socket.onmessage = (event) => {
       setMessages((p) => [...p, event.data]);
 
-      const [t, a0, a1]: ServerMessage = JSON.parse(event.data);
+      const [t, a0]: ServerMessage = JSON.parse(event.data);
       switch (t) {
         case "cards": {
           dispatch({ type: "set_cards", cards: a0 });
-          break;
+          return;
         }
 
         case "played": {
@@ -148,47 +148,45 @@ export default function Id() {
             played: a0.card,
             turn: a0.turn,
           });
-          break;
+          return;
         }
 
         case "joined": {
           dispatch({ type: "add_waiting", joined: a0 });
-          break;
+          return;
         }
 
+        case "waiting": {
+          dispatch({ type: "init_waiting", waiting: a0 });
+          navigate("waiting", { replace: true });
+          return;
+        }
         case "done": {
           dispatch({
             type: "init_done",
             board: a0.board,
             winners: a0.winners,
           });
+          navigate("done", { replace: true });
           return;
         }
 
-        case "game": {
-          if (a0 === "waiting") dispatch({ type: "init_waiting", waiting: a1 });
+        case "started": {
+          dispatch({
+            type: "init_started",
+            board: a0.board,
+            cards: a0.player[1].cards,
+            turtle: a0.player[1].turtle,
+            played: a0.played,
+            turn: a0.turn,
+          });
+          navigate("started", { replace: true });
+          return;
+        }
 
-          if (a0 === "done")
-            dispatch({
-              type: "init_done",
-              board: a1.board,
-              winners: a1.winners,
-            });
-
-          if (a0 === "started")
-            dispatch({
-              type: "init_started",
-              board: a1.board,
-              cards: a1.player[1].cards,
-              turtle: a1.player[1].turtle,
-              played: a1.played,
-              turn: a1.turn,
-            });
-
-          if (a0 === "starting") socket?.send(clientMessage(["latest"]));
-
-          if (a0 !== "starting") navigate(a0, { replace: true });
-          break;
+        case "starting": {
+          socket?.send(clientMessage(["latest"]));
+          return;
         }
       }
     };
@@ -211,8 +209,8 @@ export default function Id() {
           Turtles game
         </h1>
       </header>
-      <main className="flex flex-grow justify-center pt-32">
-        <section className="flex w-full max-w-2xl flex-col space-y-4 px-10">
+      <main className="flex flex-grow justify-center py-4">
+        <section className="flex w-full max-w-2xl flex-col space-y-4 px-10 lg:max-w-6xl">
           <h1 className="bg-gradient-to-tl from-orange-300 to-purple-700 bg-clip-text text-6xl font-extrabold tracking-wide text-transparent">
             {room}
           </h1>

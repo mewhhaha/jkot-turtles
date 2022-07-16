@@ -11,13 +11,13 @@ export const action: ActionFunction = async ({ request }) => {
 
 export default function Index() {
   return (
-    <div className="flex h-[100vh] w-[100vw] flex-col">
+    <div className="flex h-[100vh] w-[100vw] flex-col overflow-hidden">
       <header>
         <h1 className="w-full p-4 pt-12 text-center text-4xl font-extrabold tracking-wider">
           Turtles game
         </h1>
       </header>
-      <main className="flex flex-grow justify-center pt-32">
+      <main className="flex flex-grow justify-center pt-4">
         <Form className="flex flex-col space-y-4 px-10" method="post">
           <input
             name="id"

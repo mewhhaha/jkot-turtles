@@ -10,6 +10,7 @@ import { useStartedState } from "../$id.$name";
 import { turtles } from "app/helpers/turtle";
 import { TurtlePiece } from "app/components/TurtlePiece";
 import { CardPiece } from "app/components/CardPiece";
+import { Board } from "app/components/Board";
 
 type LoaderData = { self: string };
 
@@ -28,28 +29,15 @@ export default function Started() {
 
   return (
     <div className="flex flex-col space-y-4">
-      <div className="grid grid-cols-10 divide-x-4 bg-green-50">
-        {board.map((tile, i) => {
-          return (
-            <ul key={i} className="flex h-32 flex-col-reverse items-center p-1">
-              {tile.map((t) => {
-                return (
-                  <li key={t}>
-                    <TurtlePiece turtle={t} />
-                  </li>
-                );
-              })}
-            </ul>
-          );
-        })}
-      </div>
+      <Board board={board} />
+
       <p className="text-2xl">Waiting for {turn === self ? "you" : turn}</p>
       {played && (
         <div className="h-32 w-20">
           <CardPiece turtle={playedTurtle} move={playedMove} />
         </div>
       )}
-      <div className="w-min rounded-md border p-2">
+      <div className="w-min rounded-md border p-2 shadow">
         <TurtlePiece turtle={turtle} />
       </div>
 
@@ -81,7 +69,7 @@ export default function Started() {
                 {turtle === "any" ? (
                   <AnyCardButton disabled={turn !== self}>
                     <CardPiece turtle={turtle} move={move} />
-                    <div className="absolute -inset-4 hidden transform flex-col space-y-2 overflow-y-auto rounded-md border border-gray-100 bg-white p-2 shadow-md group-focus-within:flex group-hover:flex">
+                    <div className="absolute -inset-6 hidden transform flex-col space-y-2 overflow-y-auto rounded-md border border-gray-100 bg-white p-2 shadow-md group-focus-within:flex group-hover:flex">
                       {anyOptions.map((t) => {
                         return (
                           <button
@@ -139,7 +127,7 @@ const AnyCardButton = ({ disabled, children }: AnyCardButtonProps) => {
     <button
       disabled={disabled}
       className={clsx(
-        "group relative h-32 w-20 transition-opacity",
+        "group relative h-32 w-14 transition-opacity sm:w-20",
         disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"
       )}
     >
@@ -159,7 +147,7 @@ const CardButton = ({ disabled, onClick, children }: CardButtonProps) => {
     <button
       disabled={disabled}
       className={clsx(
-        "group relative h-32 w-20 transition-opacity",
+        "group relative h-32 w-14 transition-opacity sm:w-20",
         disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"
       )}
       onClick={onClick}
