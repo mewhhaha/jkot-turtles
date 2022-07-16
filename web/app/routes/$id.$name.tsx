@@ -203,12 +203,7 @@ export default function Id() {
 
   const context = useMemo(() => [state, socket], [socket, state]);
   return (
-    <div className="flex h-[100vh] w-[100vw] flex-col">
-      <header>
-        <h1 className="w-full p-4 pt-12 text-center text-4xl font-extrabold tracking-wider">
-          Turtles game
-        </h1>
-      </header>
+    <div className="flex h-[100vh] w-[100vw] flex-col overflow-hidden">
       <main className="flex flex-grow justify-center py-4">
         <section className="flex w-full max-w-2xl flex-col space-y-4 px-10 lg:max-w-6xl">
           <h1 className="bg-gradient-to-tl from-orange-300 to-purple-700 bg-clip-text text-6xl font-extrabold tracking-wide text-transparent">
