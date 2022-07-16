@@ -157,21 +157,23 @@ export default function Id() {
         }
 
         case "waiting": {
-          dispatch({ type: "init_waiting", waiting: a0 });
           navigate("waiting", { replace: true });
+          dispatch({ type: "init_waiting", waiting: a0 });
+
           return;
         }
         case "done": {
+          navigate("done", { replace: true });
           dispatch({
             type: "init_done",
             board: a0.board,
             winners: a0.winners,
           });
-          navigate("done", { replace: true });
           return;
         }
 
         case "started": {
+          navigate("started", { replace: true });
           dispatch({
             type: "init_started",
             board: a0.board,
@@ -180,7 +182,6 @@ export default function Id() {
             played: a0.played,
             turn: a0.turn,
           });
-          navigate("started", { replace: true });
           return;
         }
 
