@@ -17,7 +17,6 @@ import type {
 } from "durable-objects";
 import invariant from "invariant";
 import { clientMessage } from "app/helpers/socket";
-import { useMatch } from "react-router";
 
 type LoaderData = { url: string; name: string; room: string };
 
@@ -123,8 +122,6 @@ export default function Id() {
   const { url, room } = useLoaderData<LoaderData>();
   const [messages, setMessages] = useState<string[]>([]);
 
-  const match = useMatch(":id/:name/:state");
-
   const [state, dispatch] = useReducer(reducer, { type: "none" });
   const [socket, status] = useWebSocket(url, { reconnect: true, retries: 3 });
   const navigate = useNavigate();
@@ -211,7 +208,7 @@ export default function Id() {
             {room}
           </h1>
           <hr />
-          {state.type === match?.params.state && <Outlet context={context} />}
+          {state.type !== "none" && <Outlet context={context} />}
         </section>
       </main>
     </div>
