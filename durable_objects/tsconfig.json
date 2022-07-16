@@ -10,7 +10,6 @@
     "noEmit": true,
     "strict": true,
     "lib": ["esnext"],
-    "jsx": "react",
     "resolveJsonModule": true,
     "types": ["@cloudflare/workers-types"]
   }
