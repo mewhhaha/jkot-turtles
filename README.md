@@ -4,7 +4,7 @@ This is a small project that utilizes [React](https://reactjs.org/), [Remix](htt
 
 ## Trying things out
 
-You can try out the game at [https://jkot-turtles.pages.dev/](https://jkot-turtles.pages.dev/). However, since it requires a minimum of two players, you'll have to either _get friends_ or open up another tab and join the same room.
+You can try out the game at [https://turtles.jkot.me/](https://turtles.jkot.me/). However, since it requires a minimum of two players, you'll have to either _get friends_ or open up another tab and join the same room.
 
 ![Opening more tabs](./screenshots/opening-more-tabs.png)
 
