@@ -370,7 +370,7 @@ const pickupTurtle = (
   turtle: Turtle
 ): [moving: Tile, remaining: Tile] => {
   const turtleIndex = tile.indexOf(turtle);
-  if (turtleIndex !== -1) return [[], tile];
+  if (turtleIndex === -1) return [[], tile];
 
   const moving = tile.slice(turtleIndex);
   const remaining = tile.slice(0, turtleIndex);

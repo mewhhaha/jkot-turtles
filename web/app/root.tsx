@@ -7,11 +7,13 @@ import {
   ScrollRestoration,
 } from "@remix-run/react";
 import type { MetaFunction, LinksFunction } from "@remix-run/cloudflare";
-import styles from "./tailwind.css";
+import styles from "./unocss.css";
+import reset from "@unocss/reset/tailwind.css";
 
 export const links: LinksFunction = () => {
   return [
     { rel: "stylesheet", href: styles },
+    { rel: "stylesheet", href: reset },
     { rel: "stylesheet", href: "https://rsms.me/inter/inter.css" },
   ];
 };

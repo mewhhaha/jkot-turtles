@@ -52,6 +52,11 @@ importers:
       '@types/invariant': ^2.2.35
       '@types/react': ^18.0.14
       '@types/react-dom': ^18.0.5
+      '@unocss/cli': ^0.44.5
+      '@unocss/core': ^0.44.5
+      '@unocss/preset-typography': ^0.44.5
+      '@unocss/preset-wind': ^0.44.5
+      '@unocss/reset': ^0.44.5
       autoprefixer: ^10.4.7
       clsx: ^1.1.1
       durable-objects: workspace:^1.0.0
@@ -93,6 +98,11 @@ importers:
       '@tailwindcss/typography': 0.5.4_tailwindcss@3.1.6
       '@types/react': 18.0.15
       '@types/react-dom': 18.0.6
+      '@unocss/cli': 0.44.5
+      '@unocss/core': 0.44.5
+      '@unocss/preset-typography': 0.44.5
+      '@unocss/preset-wind': 0.44.5
+      '@unocss/reset': 0.44.5
       autoprefixer: 10.4.7_postcss@8.4.14
       durable-objects: link:../durable_objects
       eslint: 8.19.0
@@ -112,6 +122,10 @@ packages:
     dependencies:
       '@jridgewell/gen-mapping': 0.1.1
       '@jridgewell/trace-mapping': 0.3.14
+    dev: true
+
+  /@antfu/utils/0.5.2:
+    resolution: {integrity: sha512-CQkeV+oJxUazwjlHD0/3ZD08QWKuGQkhnrKo3e6ly5pd48VUpXbb77q0xMU4+vc2CkJnDS02Eq/M9ugyX20XZA==}
     dev: true
 
   /@babel/code-frame/7.18.6:
@@ -2229,6 +2243,66 @@ packages:
       eslint-visitor-keys: 3.3.0
     dev: true
 
+  /@unocss/cli/0.44.5:
+    resolution: {integrity: sha512-ll2UYzPAVw0NzArIoHauF5SeAnjFiktYTBF/V9UozoMCQM0BXihb3nfzWU4JSXo8V5vAeKIiJZvF/JGHd01C4A==}
+    engines: {node: '>=14'}
+    hasBin: true
+    dependencies:
+      '@unocss/config': 0.44.5
+      '@unocss/core': 0.44.5
+      '@unocss/preset-uno': 0.44.5
+      cac: 6.7.12
+      chokidar: 3.5.3
+      colorette: 2.0.19
+      consola: 2.15.3
+      fast-glob: 3.2.11
+      pathe: 0.3.2
+      perfect-debounce: 0.1.3
+    dev: true
+
+  /@unocss/config/0.44.5:
+    resolution: {integrity: sha512-QDJkE+vIHehspQSlQtiXlJ/pIE+rg2QTULCbcgCDtYMQ3t2WF4ET/jQdshCxTDo6qJD0SrqZe5AvAjsYS6vKwA==}
+    engines: {node: '>=14'}
+    dependencies:
+      '@unocss/core': 0.44.5
+      unconfig: 0.3.5
+    dev: true
+
+  /@unocss/core/0.44.5:
+    resolution: {integrity: sha512-IxFg0b0Exudko5akYLA4kfdv2MNYpQlgrB33N+UcHb8z0eGENBStq/ZKjwneplHV9RiSOM4d7nPYkK7Id1RgPA==}
+    dev: true
+
+  /@unocss/preset-mini/0.44.5:
+    resolution: {integrity: sha512-eHBksxUzTaopNlDGKrAbQzuRPs7/F7U608gMQcHj1lN9uO4o1tYMzbGSj41vmAMVfnzd6kmS9kuFLQVO01J3aQ==}
+    dependencies:
+      '@unocss/core': 0.44.5
+    dev: true
+
+  /@unocss/preset-typography/0.44.5:
+    resolution: {integrity: sha512-ialH29y28qtRcNTJgsbD0YZc27cihA26vUh3aZQ9BkPp9j9M9F+DWOt8HnYcnf9iVmdS+6QTB+aMGEJ7Wd1qBg==}
+    dependencies:
+      '@unocss/core': 0.44.5
+    dev: true
+
+  /@unocss/preset-uno/0.44.5:
+    resolution: {integrity: sha512-1uMKiWVu3GTrCywKdX96f7kqcCkX5H7bW71aD8knOx/z6mY9ZD+e5mNyvIuYYZupBIx0Qfmh6t0T2wpI/nwTVg==}
+    dependencies:
+      '@unocss/core': 0.44.5
+      '@unocss/preset-mini': 0.44.5
+      '@unocss/preset-wind': 0.44.5
+    dev: true
+
+  /@unocss/preset-wind/0.44.5:
+    resolution: {integrity: sha512-CB9lE8s+EkgPxDUdfJC2VGcefphH2HFD3A2RAFJWUvYPecaRgpHfElx5pDRMYOUHtBhZZJwWrwOCt7qXNqsBFw==}
+    dependencies:
+      '@unocss/core': 0.44.5
+      '@unocss/preset-mini': 0.44.5
+    dev: true
+
+  /@unocss/reset/0.44.5:
+    resolution: {integrity: sha512-ZNe86u7BpzCT/5P3S49sFxLucBlfW0ir6oRqmOZe4uhN02puqFUK1L7c0dkoXTVhETxESmWaxBM5GTmbifGeZg==}
+    dev: true
+
   /@web3-storage/multipart-parser/1.0.0:
     resolution: {integrity: sha512-BEO6al7BYqcnfX15W2cnGR+Q566ACXAT9UQykORCWW80lmkpWsnEob6zJS1ZVBKsSJC8+7vJkHwlp+lXG1UCdw==}
 
@@ -2665,6 +2739,11 @@ packages:
     engines: {node: '>= 0.8'}
     dev: true
 
+  /cac/6.7.12:
+    resolution: {integrity: sha512-rM7E2ygtMkJqD9c7WnFU6fruFcN3xe4FM5yUmgxhZzIKJk4uHl9U/fhwdajGFQbQuv43FAUo1Fe8gX/oIKDeSA==}
+    engines: {node: '>=8'}
+    dev: true
+
   /cacache/15.3.0:
     resolution: {integrity: sha512-VVdYzXEn+cnbXpFgWs5hTT7OScegHVmLhJIR8Ufqk3iFD6A6j5iSX1KuBTfNEv4tdJWE2PzA6IVFtcLC7fN9wQ==}
     engines: {node: '>= 10'}
@@ -2892,6 +2971,10 @@ packages:
     resolution: {integrity: sha512-dOy+3AuW3a2wNbZHIuMZpTcgjGuLU/uBL/ubcZF9OXbDo8ff4O8yVp5Bf0efS8uEoYo5q4Fx7dY9OgQGXgAsQA==}
     dev: true
 
+  /colorette/2.0.19:
+    resolution: {integrity: sha512-3tlv/dIP7FWvj3BsbHrGLJ6l/oKh1O3TcgBqMn+yyCagOxc23fyzDS6HypQbgxWbkpDnf52p1LuR4eWDQ/K9WQ==}
+    dev: true
+
   /comma-separated-tokens/2.0.2:
     resolution: {integrity: sha512-G5yTt3KQN4Yn7Yk4ed73hlZ1evrFKXeUW3086p3PRFNp7m2vIjI6Pg+Kgb+oyzhd9F2qdcoj67+y3SdxL5XWsg==}
     dev: true
@@ -2914,6 +2997,10 @@ packages:
 
   /concat-map/0.0.1:
     resolution: {integrity: sha1-2Klr13/Wjfd5OnMDajug1UBdR3s=}
+    dev: true
+
+  /consola/2.15.3:
+    resolution: {integrity: sha512-9vAdYbHj6x2fLKC4+oPH0kFzY/orMZyG2Aj+kNylHxKGJ/Ed4dpNyAQYwJOdqO4zdM7XpVHmyejQDcQHrnuXbw==}
     dev: true
 
   /content-disposition/0.5.4:
@@ -3110,6 +3197,10 @@ packages:
 
   /defined/1.0.0:
     resolution: {integrity: sha512-Y2caI5+ZwS5c3RiNDJ6u53VhQHv+hHKwhkI1iHvceKUHw9Df6EK2zRLfjejRgMuCuxK7PfSWIMwWecceVvThjQ==}
+    dev: true
+
+  /defu/6.0.0:
+    resolution: {integrity: sha512-t2MZGLf1V2rV4VBZbWIaXKdX/mUcYW0n2znQZoADBkGGxYL8EWqCuCZBmJPJ/Yy9fofJkyuuSuo5GSwo0XdEgw==}
     dev: true
 
   /depd/1.1.2:
@@ -5274,6 +5365,11 @@ packages:
     resolution: {integrity: sha512-l9gxWe5TOLUESYnBn85Jxd6tIZLWdRX5YKkHIBfSgbNQ7UFPNUGuWihRV+LlEbfJJIzgLmhwAbaWRi5yWJm8kg==}
     dev: false
 
+  /jiti/1.14.0:
+    resolution: {integrity: sha512-4IwstlaKQc9vCTC+qUXLM1hajy2ImiL9KnLvVYiaHOtS/v3wRjhLlGl121AmgDgx/O43uKmxownJghS5XMya2A==}
+    hasBin: true
+    dev: true
+
   /js-tokens/4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
 
@@ -6562,12 +6658,20 @@ packages:
     engines: {node: '>=8'}
     dev: true
 
+  /pathe/0.3.2:
+    resolution: {integrity: sha512-qhnmX0TOqlCvdWWTkoM83wh5J8fZ2yhbDEc9MlsnAEtEc+JCwxUKEwmd6pkY9hRe6JR1Uecbc14VcAKX2yFSTA==}
+    dev: true
+
   /peek-stream/1.1.3:
     resolution: {integrity: sha512-FhJ+YbOSBb9/rIl2ZeE/QHEsWn7PqNYt8ARAY3kIgNGOk13g9FGyIY6JIl/xB/3TFRVoTv5as0l11weORrTekA==}
     dependencies:
       buffer-from: 1.1.2
       duplexify: 3.7.1
       through2: 2.0.5
+    dev: true
+
+  /perfect-debounce/0.1.3:
+    resolution: {integrity: sha512-NOT9AcKiDGpnV/HBhI22Str++XWcErO/bALvHCuhv33owZW/CjH8KAFLZDCmu3727sihe0wTxpDhyGc6M8qacQ==}
     dev: true
 
   /periscopic/3.0.4:
@@ -7815,6 +7919,14 @@ packages:
       has-bigints: 1.0.2
       has-symbols: 1.0.3
       which-boxed-primitive: 1.0.2
+    dev: true
+
+  /unconfig/0.3.5:
+    resolution: {integrity: sha512-YMnPPUSfW0pT4Zzy4inM8tRHJZmhH+KcuFW/3qxkLKPhswEw18gQYe1jt57jY6ctFB0fnpiCpQ2Jtkbg4y/IPA==}
+    dependencies:
+      '@antfu/utils': 0.5.2
+      defu: 6.0.0
+      jiti: 1.14.0
     dev: true
 
   /undici/5.5.1:

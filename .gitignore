@@ -5,7 +5,7 @@ node_modules
 /web/functions
 /web/public/build
 
-tailwind.css
+unocss.css
 
 dist
 

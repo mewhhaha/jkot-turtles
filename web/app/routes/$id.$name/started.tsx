@@ -124,15 +124,14 @@ type AnyCardButtonProps = {
 
 const AnyCardButton = ({ disabled, children }: AnyCardButtonProps) => {
   return (
-    <button
-      disabled={disabled}
+    <div
       className={clsx(
         "group relative h-32 w-14 transition-opacity sm:w-20",
         disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"
       )}
     >
       <div className="absolute inset-0 transition-transform">{children}</div>
-    </button>
+    </div>
   );
 };
 

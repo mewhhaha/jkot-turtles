@@ -24,9 +24,12 @@
     "@cloudflare/workers-types": "^3.14.0",
     "@remix-run/dev": "^1.6.3",
     "@remix-run/eslint-config": "^1.6.3",
-    "@tailwindcss/typography": "^0.5.4",
     "@types/react": "^18.0.14",
     "@types/react-dom": "^18.0.5",
+    "@unocss/cli": "^0.44.5",
+    "@unocss/preset-typography": "^0.44.5",
+    "@unocss/preset-wind": "^0.44.5",
+    "@unocss/reset": "^0.44.5",
     "autoprefixer": "^10.4.7",
     "durable-objects": "workspace:^1.0.0",
     "eslint": "^8.19.0",
@@ -34,7 +37,6 @@
     "postcss": "^8.4.14",
     "prettier": "^2.7.1",
     "prettier-plugin-tailwindcss": "^0.1.11",
-    "tailwindcss": "^3.1.6",
     "typescript": "4.8.0-beta",
     "wrangler": "2.0.19"
   },
@@ -45,12 +47,11 @@
   "scripts": {
     "postinstall": "remix setup cloudflare",
     "build": "NODE_ENV=production run-s build:css build:remix",
-    "build:css": "tailwindcss -m -o ./app/tailwind.css",
+    "build:css": "unocss './app/**/*.{ts,tsx}' -m -o ./app/unocss.css",
     "build:remix": "NODE_ENV=production remix build",
     "dev:remix": "NODE_ENV=development remix watch",
-    "dev:tailwind": "tailwindcss -w -o ./app/tailwind.css",
+    "dev:css": "unocss './app/**/*.{ts,tsx}' -o ./app/unocss.css --watch",
     "dev:wrangler": "NODE_ENV=development wrangler pages dev --live-reload ./public",
-    "dev": "tailwindcss -o ./app/tailwind.css && NODE_ENV=development remix build && run-p \"dev:*\"",
-    "test": "vitest"
+    "dev": "unocss './app/**/*.{ts,tsx}' -o ./app/unocss.css && NODE_ENV=development remix build && run-p \"dev:*\""
   }
 }
