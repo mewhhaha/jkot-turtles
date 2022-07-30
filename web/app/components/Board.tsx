@@ -18,10 +18,10 @@ export const Board = ({ board }: BoardProps) => {
             className={clsx(
               "isolate flex h-72 flex-col-reverse items-center p-1 sm:h-96",
               {
-                "justify-evenly bg-yellow-200 bg-[url('/patterns/diagonal-stripes.svg')]":
+                "justify-evenly bg-yellow-200 bg-[url(/patterns/diagonal-stripes.svg)]":
                   start,
-                "bg-white bg-[url('/patterns/tiny-checkers.svg')]": finish,
-                "bg-green-200 bg-[url('/patterns/texture.svg')] text-green-600":
+                "bg-white bg-[url(/patterns/tiny-checkers.svg)]": finish,
+                "bg-green-200 bg-[url(/patterns/texture.svg)] text-green-600":
                   !start && !finish,
               }
             )}

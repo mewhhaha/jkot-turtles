@@ -16,3 +16,5 @@ functions
 .vscode
 
 .pnpm-debug.log
+
+.dev.vars
