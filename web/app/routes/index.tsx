@@ -11,7 +11,7 @@ export const action: ActionFunction = async ({ request }) => {
 
 export default function Index() {
   return (
-    <div className="flex h-[100vh] w-[100vw] flex-col overflow-hidden">
+    <div className="flex h-[100vh] w-[100vw] flex-col">
       <header>
         <h1 className="w-full p-4 pt-12 text-center text-4xl font-extrabold tracking-wider">
           Turtles game
